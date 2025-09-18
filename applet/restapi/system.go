@@ -14,7 +14,7 @@ func NewSystem(cli tunnel.Client) *System {
 type System struct{}
 
 func (s *System) RegisterRoute(r *ship.RouteGroupBuilder) error {
-	r.Route("/health/ping").GET(s.ping)
+	r.Route("/system/ping").GET(s.ping)
 	return nil
 }
 

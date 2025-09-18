@@ -37,8 +37,9 @@ func (ac *agentClient) Close() error {
 
 func (ac *agentClient) connect() (transport.Muxer, error) {
 	req := bamesg.AgentRequest{
-		Goos:   runtime.GOOS,
-		Goarch: runtime.GOARCH,
+		MachineID: ac.cfg.MachineID,
+		Goos:      runtime.GOOS,
+		Goarch:    runtime.GOARCH,
 	}
 
 	var retry int

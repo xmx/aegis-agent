@@ -10,6 +10,7 @@ import (
 	"github.com/xmx/aegis-agent/applet/restapi"
 	"github.com/xmx/aegis-agent/client/tunnel"
 	"github.com/xmx/aegis-agent/config"
+	"github.com/xmx/aegis-agent/machine"
 	"github.com/xmx/aegis-common/library/httpx"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/shipx"
@@ -30,8 +31,10 @@ func Exec(ctx context.Context, ld config.Loader) error {
 		return err
 	}
 
+	machineID := machine.HashedID()
 	brkHandler := httpx.NewAtomicHandler(nil)
 	dc := tunnel.DialConfig{
+		MachineID: machineID,
 		Addresses: cfg.Addresses,
 		Handler:   brkHandler,
 		DialConfig: transport.DialConfig{
@@ -46,6 +49,7 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	}
 
 	brokerAPIs := []shipx.RouteRegister{
+		restapi.NewPprof(),
 		restapi.NewSystem(cli),
 	}
 	shipLog := logger.NewShip(logHandler, 6)
@@ -55,6 +59,7 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	brkSH.Validator = valid
 	brkSH.Logger = shipLog
 	brkHandler.Store(brkSH)
+
 	apiRGB := brkSH.Group("/api")
 	if err = shipx.RegisterRoutes(apiRGB, brokerAPIs); err != nil {
 		return err

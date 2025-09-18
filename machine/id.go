@@ -57,5 +57,7 @@ func trim(s string) string {
 }
 
 func HashedID() string {
-	return ""
+	id, _ := ID()
+	sum := sha256.Sum256([]byte(id))
+	return hex.EncodeToString(sum[:])
 }

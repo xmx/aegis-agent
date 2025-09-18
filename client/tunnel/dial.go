@@ -17,6 +17,7 @@ type Subscriber interface {
 }
 
 type DialConfig struct {
+	MachineID  string               // 机器码
 	Addresses  []string             // broker 地址
 	DialConfig transport.DialConfig // Dial 配置
 	Logger     *slog.Logger         // 日志
