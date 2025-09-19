@@ -67,6 +67,7 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	}
 
 	<-ctx.Done()
+	_ = cli.Close()
 
 	return ctx.Err()
 }
