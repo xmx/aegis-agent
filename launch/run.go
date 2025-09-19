@@ -3,14 +3,18 @@ package launch
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/robfig/cron/v3"
 	"github.com/xgfone/ship/v5"
+	"github.com/xmx/aegis-agent/applet/crontab"
 	"github.com/xmx/aegis-agent/applet/restapi"
 	"github.com/xmx/aegis-agent/client/tunnel"
 	"github.com/xmx/aegis-agent/config"
 	"github.com/xmx/aegis-agent/machine"
+	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpx"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/shipx"
@@ -19,11 +23,14 @@ import (
 )
 
 func Exec(ctx context.Context, ld config.Loader) error {
+	cfg, _ := ld.Load(ctx)
+	if cfg == nil {
+		cfg = &config.Config{}
+	}
+
 	consoleOut := logger.NewTint(os.Stdout)
 	logHandler := logger.NewHandler(consoleOut)
 	log := slog.New(logHandler)
-
-	cfg := &config.Config{Addresses: []string{"127.0.0.1:9443"}}
 
 	valid := validation.New()
 	if err := valid.Validate(cfg); err != nil {
@@ -48,6 +55,14 @@ func Exec(ctx context.Context, ld config.Loader) error {
 		return err
 	}
 
+	trip := transport.NewHTTPTransport(cli.MuxLoader(), transport.BrokerHost)
+	httpCli := httpx.Client{Client: &http.Client{Transport: trip}}
+	crond := cronv3.New(cron.WithSeconds(), cron.WithLogger(cronv3.NewLog(log)))
+	crond.Start()
+
+	networkTask := crontab.NewNetwork(ctx, httpCli, log)
+	crond.AddSchedule("network", networkTask.Spec(), networkTask.Call)
+
 	brokerAPIs := []shipx.RouteRegister{
 		shipx.NewPprof(),
 		shipx.NewHealth(),
@@ -67,6 +82,7 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	}
 
 	<-ctx.Done()
+	crond.Stop()
 	_ = cli.Close()
 
 	return ctx.Err()
