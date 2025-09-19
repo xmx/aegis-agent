@@ -12,7 +12,8 @@ type Loader interface {
 }
 
 type Config struct {
-	Addresses []string `json:"addresses" validate:"lte=1000"`
+	Protocols []string `json:"protocols"`
+	Addresses []string `json:"addresses"`
 }
 
 type JSON string

@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/robfig/cron/v3"
 	"github.com/xmx/aegis-common/contract/message"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpx"
@@ -13,7 +12,7 @@ import (
 	"github.com/xmx/aegis-common/transport"
 )
 
-func NewNetwork(parent context.Context, cli httpx.Client, log *slog.Logger) Tasker {
+func NewNetwork(parent context.Context, cli httpx.Client, log *slog.Logger) cronv3.Tasker {
 	return &networkCard{
 		cli:    cli,
 		log:    log,
@@ -28,28 +27,25 @@ type networkCard struct {
 	last   []*network.Card
 }
 
-func (n *networkCard) Spec() cron.Schedule {
-	return cronv3.NewInterval(20 * time.Second)
+func (n *networkCard) Info() cronv3.TaskInfo {
+	return cronv3.TaskInfo{
+		Name:      "上报网卡信息",
+		Timeout:   10 * time.Second,
+		CronSched: cronv3.NewInterval(time.Hour),
+	}
 }
 
-func (n *networkCard) Call() {
-	cards := network.Cards()
-	if !n.isModified(cards) {
+func (n *networkCard) Call(ctx context.Context) error {
+	cards := network.Interfaces()
+	if cards.Equal(n.last) {
 		n.log.Debug("网卡信息未发生变化")
-		return
+		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(n.parent, 10*time.Second)
-	defer cancel()
-
+	n.last = cards
 	data := &message.Data[[]*network.Card]{Data: cards}
 	reqURL := transport.NewBrokerURL("/api/system/network")
 	strURL := reqURL.String()
-	if err := n.cli.PostJSON(ctx, strURL, nil, data, struct{}{}); err != nil {
-		n.log.Warn("上报网卡信息发生错误", slog.Any("error", err))
-	}
-}
 
-func (n *networkCard) isModified(currents []*network.Card) bool {
-	return true
+	return n.cli.PostJSON(ctx, strURL, nil, data, struct{}{})
 }

@@ -45,7 +45,8 @@ func Exec(ctx context.Context, ld config.Loader) error {
 		Addresses: cfg.Addresses,
 		Handler:   brkHandler,
 		DialConfig: transport.DialConfig{
-			Parent: ctx,
+			Protocols: cfg.Protocols,
+			Parent:    ctx,
 		},
 		Timeout: 10 * time.Second,
 		Logger:  log,
@@ -57,11 +58,11 @@ func Exec(ctx context.Context, ld config.Loader) error {
 
 	trip := transport.NewHTTPTransport(cli.MuxLoader(), transport.BrokerHost)
 	httpCli := httpx.Client{Client: &http.Client{Transport: trip}}
-	crond := cronv3.New(cron.WithSeconds(), cron.WithLogger(cronv3.NewLog(log)))
+	crond := cronv3.New(ctx, log, cron.WithSeconds())
 	crond.Start()
 
 	networkTask := crontab.NewNetwork(ctx, httpCli, log)
-	crond.AddSchedule("network", networkTask.Spec(), networkTask.Call)
+	_, _ = crond.AddTask(networkTask)
 
 	brokerAPIs := []shipx.RouteRegister{
 		shipx.NewPprof(),
