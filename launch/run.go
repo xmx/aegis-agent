@@ -49,7 +49,8 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	}
 
 	brokerAPIs := []shipx.RouteRegister{
-		restapi.NewPprof(),
+		shipx.NewPprof(),
+		shipx.NewHealth(),
 		restapi.NewSystem(cli),
 	}
 	shipLog := logger.NewShip(logHandler, 6)
