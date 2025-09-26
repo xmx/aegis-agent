@@ -2,34 +2,42 @@ package config
 
 import (
 	"context"
-	"encoding/json/jsontext"
-	"encoding/json/v2"
-	"os"
+	"path/filepath"
+	"strings"
 )
 
 type Loader interface {
-	Load(context.Context) (*Config, error)
+	Load(context.Context) (*HideConfig, error)
 }
 
-type Config struct {
-	Protocols []string `json:"protocols"`
-	Addresses []string `json:"addresses"`
+func NewFile(f string) Loader {
+	ld := &loader{filename: f}
+	switch strings.ToLower(filepath.Ext(f)) {
+	case ".js":
+		ld.decoder = new(jsdecoder)
+	case ".json":
+		ld.decoder = new(jsondecoder)
+	default:
+		ld.decoder = new(undecoder)
+	}
+
+	return ld
 }
 
-type JSON string
+type HideConfig struct {
+	Protocols []string `json:"protocols"` // 连接协议 udp tcp
+	Addresses []string `json:"addresses"` // broker 地址
+}
 
-func (j JSON) Load(context.Context) (*Config, error) {
-	f, err := os.Open(string(j))
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+type loader struct {
+	filename string
+	decoder  decoder
+}
 
-	c := new(Config)
-	dec := jsontext.NewDecoder(f)
-	if err = json.UnmarshalDecode(dec, c); err != nil {
-		return nil, err
-	}
+func (l loader) Load(ctx context.Context) (*HideConfig, error) {
+	return l.decoder.decode(ctx, l.filename)
+}
 
-	return c, nil
+type decoder interface {
+	decode(ctx context.Context, filename string) (*HideConfig, error)
 }

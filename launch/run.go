@@ -23,21 +23,19 @@ import (
 )
 
 func Exec(ctx context.Context, ld config.Loader) error {
-	cfg, _ := ld.Load(ctx)
-	if cfg == nil {
-		cfg = &config.Config{}
-	}
-
 	consoleOut := logger.NewTint(os.Stdout)
 	logHandler := logger.NewHandler(consoleOut)
 	log := slog.New(logHandler)
 
-	valid := validation.New()
-	if err := valid.Validate(cfg); err != nil {
-		log.Error("配置验证错误", slog.Any("error", err))
-		return err
+	cfg, err := ld.Load(ctx)
+	if err != nil {
+		log.Error("加载配置文件错误", "error", err)
+	}
+	if cfg == nil {
+		cfg = &config.HideConfig{}
 	}
 
+	valid := validation.New()
 	machineID := machine.HashedID()
 	brkHandler := httpx.NewAtomicHandler(nil)
 	dc := tunnel.DialConfig{

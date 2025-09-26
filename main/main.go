@@ -19,7 +19,7 @@ func main() {
 	args := os.Args
 	name := filepath.Base(args[0])
 	set := flag.NewFlagSet(name, flag.ExitOnError)
-	cfg := set.String("c", "resources/config/application.json", "配置文件")
+	cfg := set.String("c", "resources/config/application.js", "配置文件")
 	ver := set.Bool("v", false, "打印版本")
 	_ = set.Parse(args[1:])
 	if _, _ = banner.ANSI(os.Stdout); *ver {
@@ -38,7 +38,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), signals...)
 	defer cancel()
 
-	if err := launch.Exec(ctx, config.JSON(*cfg)); err != nil {
+	if err := launch.Exec(ctx, config.NewFile(*cfg)); err != nil {
 		slog.Error("服务运行错误", slog.Any("error", err))
 	} else {
 		slog.Info("服务停止运行")
