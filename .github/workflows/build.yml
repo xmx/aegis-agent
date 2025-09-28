@@ -38,7 +38,7 @@ jobs:
           GOARCH: arm64
         run: sh build.sh
 
-      - name: 编译 windows 程序
+      - name: 编译 windows-amd64 程序
         env:
           GOOS: windows
           GOARCH: amd64
