@@ -11,14 +11,14 @@ import (
 	"github.com/xgfone/ship/v5"
 	"github.com/xmx/aegis-agent/applet/crontab"
 	"github.com/xmx/aegis-agent/applet/restapi"
-	"github.com/xmx/aegis-agent/client/tunnel"
+	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
-	"github.com/xmx/aegis-agent/machine"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpx"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/shipx"
 	"github.com/xmx/aegis-common/transport"
+	"github.com/xmx/aegis-common/tunnel/tundial"
 	"github.com/xmx/aegis-common/validation"
 )
 
@@ -36,20 +36,14 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	}
 
 	valid := validation.New()
-	machineID := machine.HashedID()
 	brkHandler := httpx.NewAtomicHandler(nil)
-	dc := tunnel.DialConfig{
-		MachineID: machineID,
-		Addresses: cfg.Addresses,
-		Handler:   brkHandler,
-		DialConfig: transport.DialConfig{
-			Protocols: cfg.Protocols,
-			Parent:    ctx,
-		},
-		Timeout: 10 * time.Second,
-		Logger:  log,
+	tunCfg := tundial.Config{
+		Protocols:  cfg.Protocols,
+		Addresses:  cfg.Addresses,
+		PerTimeout: 10 * time.Second,
+		Parent:     ctx,
 	}
-	cli, err := dc.Open()
+	tunnel, err := clientd.Open(tunCfg, brkHandler, log)
 	if err != nil {
 		return err
 	}

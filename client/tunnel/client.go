@@ -12,7 +12,12 @@ import (
 	"github.com/xmx/aegis-common/contract/bamesg"
 	"github.com/xmx/aegis-common/library/timex"
 	"github.com/xmx/aegis-common/transport"
+	"github.com/xmx/aegis-common/tunnel/tundial"
 )
+
+type Tunneler interface {
+	Muxer() tundial.Muxer
+}
 
 type Client interface {
 	MuxLoader() transport.MuxLoader
