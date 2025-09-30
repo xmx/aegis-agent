@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/xmx/aegis-common/library/timex"
+	"github.com/xmx/aegis-common/options"
 	"github.com/xmx/aegis-common/tunnel/tundial"
 )
 
@@ -19,12 +20,13 @@ type Tunneler interface {
 	Muxer() tundial.Muxer
 }
 
-func Open(cfg tundial.Config, inner http.Handler, log *slog.Logger) (Tunneler, error) {
+func Open(cfg tundial.Config, opts ...options.Lister[option]) (Tunneler, error) {
 	if cfg.Parent == nil {
 		cfg.Parent = context.Background()
 	}
+	opt := options.Eval(opts...)
 
-	ac := &agentClient{cfg: cfg, inner: inner, log: log}
+	ac := &agentClient{cfg: cfg, opt: opt}
 	mux, err := ac.opens()
 	if err != nil {
 		return nil, err
@@ -36,10 +38,9 @@ func Open(cfg tundial.Config, inner http.Handler, log *slog.Logger) (Tunneler, e
 }
 
 type agentClient struct {
-	cfg   tundial.Config
-	inner http.Handler
-	log   *slog.Logger
-	mux   tundial.AtomicMuxer
+	cfg tundial.Config
+	opt option
+	mux tundial.AtomicMuxer
 }
 
 func (ac *agentClient) Muxer() tundial.Muxer {
@@ -72,9 +73,9 @@ func (ac *agentClient) opens() (tundial.Muxer, error) {
 		}
 
 		sleep := ac.backoff(time.Since(startedAt), reties)
-		ac.log.Warn("等待重连", "reties", reties, "sleep", sleep, "error", err)
+		ac.log().Warn("等待重连", "reties", reties, "sleep", sleep, "error", err)
 		if err = timex.Sleep(ac.cfg.Parent, sleep); err != nil {
-			ac.log.Error("不满足继续重试连接的条件", "error", err)
+			ac.log().Error("不满足继续重试连接的条件", "error", err)
 			return nil, err
 		}
 	}
@@ -83,7 +84,7 @@ func (ac *agentClient) opens() (tundial.Muxer, error) {
 func (ac *agentClient) open(req *authRequest) (tundial.Muxer, *authResponse, error) {
 	mux, err := tundial.Open(ac.cfg)
 	if err != nil {
-		ac.log.Info("基础网络连接失败", "error", err)
+		ac.log().Info("基础网络连接失败", "error", err)
 		return nil, nil, err
 	}
 
@@ -94,7 +95,7 @@ func (ac *agentClient) open(req *authRequest) (tundial.Muxer, *authResponse, err
 		slog.Any("protocol", protocol),
 		slog.Any("subprotocol", subprotocol),
 	}
-	ac.log.Info("基础网络连接成功", attrs...)
+	ac.log().Info("基础网络连接成功", attrs...)
 
 	res, err1 := ac.authentication(mux, req, time.Minute)
 	if err1 != nil {
@@ -104,12 +105,12 @@ func (ac *agentClient) open(req *authRequest) (tundial.Muxer, *authResponse, err
 		attrs = append(attrs, slog.Any("auth_response", res))
 	}
 	if err1 == nil && res != nil && res.successful() {
-		ac.log.Info("通道连接认证成功", attrs...)
+		ac.log().Info("通道连接认证成功", attrs...)
 		return mux, res, nil
 	}
 
 	_ = mux.Close() // 关闭连接
-	ac.log.Warn("基础网络连接成功但认证失败", attrs...)
+	ac.log().Warn("基础网络连接成功但认证失败", attrs...)
 
 	return nil, res, err1
 }
@@ -135,13 +136,17 @@ func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeo
 }
 
 func (ac *agentClient) serve(mux tundial.Muxer) {
+	srv := ac.opt.server
+	if srv == nil {
+		srv = &http.Server{Handler: http.NotFoundHandler()}
+	}
+
 	const sleep = 2 * time.Second
 	for {
-		srv := &http.Server{Handler: ac.inner}
 		err := srv.Serve(mux)
 		_ = mux.Close()
 
-		ac.log.Warn("通道掉线了", "error", err, "sleep", sleep)
+		ac.log().Warn("通道掉线了", "error", err, "sleep", sleep)
 		ctx := ac.cfg.Parent
 		_ = timex.Sleep(ctx, sleep)
 		if mux, err = ac.opens(); err != nil {
@@ -183,4 +188,12 @@ func (ac *agentClient) backoff(elapsed time.Duration, reties int) time.Duration 
 	}
 
 	return 10 * time.Minute
+}
+
+func (ac *agentClient) log() *slog.Logger {
+	if l := ac.opt.logger; l != nil {
+		return l
+	}
+
+	return slog.Default()
 }

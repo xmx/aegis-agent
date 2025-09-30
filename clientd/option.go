@@ -1,6 +1,9 @@
 package clientd
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 type Identifier interface {
 	MachineID(rebuild bool) string
@@ -9,31 +12,49 @@ type Identifier interface {
 type option struct {
 	identifier Identifier
 	server     *http.Server
+	logger     *slog.Logger
 }
 
-type OptionFunc func(option) option
+func NewOption() *OptionBuilder {
+	return &OptionBuilder{}
+}
 
-func WithIdentifier(id Identifier) OptionFunc {
-	return func(o option) option {
-		o.identifier = id
+type OptionBuilder struct {
+	opts []func(option) option
+}
+
+func (b *OptionBuilder) List() []func(option) option {
+	return b.opts
+}
+
+func (b *OptionBuilder) Logger(l *slog.Logger) *OptionBuilder {
+	b.opts = append(b.opts, func(o option) option {
+		o.logger = l
 		return o
-	}
+	})
+	return b
 }
 
-func WithHTTPServer(s *http.Server) OptionFunc {
-	return func(o option) option {
+func (b *OptionBuilder) Server(s *http.Server) *OptionBuilder {
+	b.opts = append(b.opts, func(o option) option {
 		o.server = s
 		return o
-	}
+	})
+	return b
 }
 
-func WithHTTPHandler(h http.Handler) OptionFunc {
-	return func(o option) option {
+func (b *OptionBuilder) Handler(h http.Handler) *OptionBuilder {
+	b.opts = append(b.opts, func(o option) option {
 		o.server = &http.Server{Handler: h}
 		return o
-	}
+	})
+	return b
 }
 
-func WithLogger() {
-
+func (b *OptionBuilder) Identifier(d Identifier) *OptionBuilder {
+	b.opts = append(b.opts, func(o option) option {
+		o.identifier = d
+		return o
+	})
+	return b
 }
