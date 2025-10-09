@@ -58,3 +58,23 @@ func (b *OptionBuilder) Identifier(d Identifier) *OptionBuilder {
 	})
 	return b
 }
+
+type fallbackOption struct {
+}
+
+func (f fallbackOption) List() []func(option) option {
+	return []func(option) option{
+		func(o option) option {
+			if o.server == nil {
+				o.server = &http.Server{
+					Handler: http.NotFoundHandler(),
+				}
+			}
+			if o.identifier == nil {
+
+			}
+
+			return o
+		},
+	}
+}

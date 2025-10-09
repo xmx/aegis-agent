@@ -31,7 +31,7 @@ func (n *networkCard) Info() cronv3.TaskInfo {
 	return cronv3.TaskInfo{
 		Name:      "上报网卡信息",
 		Timeout:   10 * time.Second,
-		CronSched: cronv3.NewInterval(time.Hour),
+		CronSched: cronv3.NewInterval(time.Minute),
 	}
 }
 

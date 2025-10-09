@@ -11,16 +11,13 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/xmx/aegis-agent/machine"
 	"github.com/xmx/aegis-common/library/timex"
 	"github.com/xmx/aegis-common/options"
 	"github.com/xmx/aegis-common/tunnel/tundial"
 )
 
-type Tunneler interface {
-	Muxer() tundial.Muxer
-}
-
-func Open(cfg tundial.Config, opts ...options.Lister[option]) (Tunneler, error) {
+func Open(cfg tundial.Config, opts ...options.Lister[option]) (tundial.Muxer, error) {
 	if cfg.Parent == nil {
 		cfg.Parent = context.Background()
 	}
@@ -31,10 +28,12 @@ func Open(cfg tundial.Config, opts ...options.Lister[option]) (Tunneler, error) 
 	if err != nil {
 		return nil, err
 	}
-	ac.mux = tundial.MakeAtomic(mux)
+
+	amux := tundial.MakeAtomic(mux)
+	ac.mux = amux
 	go ac.serve(mux)
 
-	return ac, nil
+	return amux, nil
 }
 
 type agentClient struct {
@@ -48,8 +47,9 @@ func (ac *agentClient) Muxer() tundial.Muxer {
 }
 
 func (ac *agentClient) opens() (tundial.Muxer, error) {
+	id, _ := machine.ID()
 	req := &authRequest{
-		MachineID: "",
+		MachineID: id,
 		Goos:      runtime.GOOS,
 		Goarch:    runtime.GOARCH,
 		PID:       os.Getpid(),

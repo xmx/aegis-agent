@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json/jsontext"
 	"encoding/json/v2"
-	"errors"
 	"os"
 
 	"github.com/xmx/aegis-common/jsos/jsmod"
 	"github.com/xmx/aegis-common/jsos/jsvm"
+	"github.com/xmx/aegis-common/library/jsonc"
 )
 
 type jsondecoder struct{}
@@ -56,8 +56,19 @@ func (j jsdecoder) decode(ctx context.Context, filename string) (*HideConfig, er
 	return varb.Get(), nil
 }
 
-type undecoder struct{}
+type jsoncdecoder struct{}
 
-func (u undecoder) decode(context.Context, string) (*HideConfig, error) {
-	return nil, errors.ErrUnsupported
+func (j jsoncdecoder) decode(_ context.Context, filename string) (*HideConfig, error) {
+	raw, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	data := jsonc.Translate(raw)
+	cfg := new(HideConfig)
+	if err = json.Unmarshal(data, cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }

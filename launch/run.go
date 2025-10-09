@@ -17,17 +17,18 @@ import (
 	"github.com/xmx/aegis-common/library/httpx"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/shipx"
-	"github.com/xmx/aegis-common/transport"
 	"github.com/xmx/aegis-common/tunnel/tundial"
+	"github.com/xmx/aegis-common/tunnel/tunutil"
 	"github.com/xmx/aegis-common/validation"
 )
 
-func Exec(ctx context.Context, ld config.Loader) error {
+func Exec(ctx context.Context, configFile string) error {
 	consoleOut := logger.NewTint(os.Stdout)
 	logHandler := logger.NewHandler(consoleOut)
 	log := slog.New(logHandler)
 
-	cfg, err := ld.Load(ctx)
+	configLoader := config.File(configFile)
+	cfg, err := configLoader.Load(ctx)
 	if err != nil {
 		log.Error("加载配置文件错误", "error", err)
 	}
@@ -43,13 +44,17 @@ func Exec(ctx context.Context, ld config.Loader) error {
 		PerTimeout: 10 * time.Second,
 		Parent:     ctx,
 	}
-	tunnel, err := clientd.Open(tunCfg, brkHandler, log)
+	cliOpt := clientd.NewOption().Handler(brkHandler).Logger(log)
+	tunnel, err := clientd.Open(tunCfg, cliOpt)
 	if err != nil {
 		return err
 	}
+	systemDialer := tunutil.DefaultDialer()         // 系统默认 dialer
+	tunnelDialer := tunutil.NewTunnelDialer(tunnel) // 将 tunnel 改造成 dialer
 
-	trip := transport.NewHTTPTransport(cli.MuxLoader(), transport.BrokerHost)
-	httpCli := httpx.Client{Client: &http.Client{Transport: trip}}
+	dialer := tunutil.NewMatchDialer(systemDialer, tunutil.NewHostMatch(tunutil.BrokerHost, tunnelDialer))
+	httpTransport := &http.Transport{DialContext: dialer.DialContext}
+	httpCli := httpx.Client{Client: &http.Client{Transport: httpTransport}}
 	crond := cronv3.New(ctx, log, cron.WithSeconds())
 	crond.Start()
 
@@ -59,7 +64,7 @@ func Exec(ctx context.Context, ld config.Loader) error {
 	brokerAPIs := []shipx.RouteRegister{
 		shipx.NewPprof(),
 		shipx.NewHealth(),
-		restapi.NewSystem(cli),
+		restapi.NewSystem(tunnel),
 	}
 	shipLog := logger.NewShip(logHandler, 6)
 	brkSH := ship.Default()
@@ -76,7 +81,7 @@ func Exec(ctx context.Context, ld config.Loader) error {
 
 	<-ctx.Done()
 	crond.Stop()
-	_ = cli.Close()
+	_ = tunnel.Close()
 
 	return ctx.Err()
 }

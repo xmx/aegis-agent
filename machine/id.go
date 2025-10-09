@@ -1,9 +1,6 @@
 package machine
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -21,17 +18,6 @@ func ID() (string, error) {
 	return id, nil
 }
 
-// ProtectedID returns a hashed version of the machine ID in a cryptographically secure way,
-// using a fixed, application-specific key.
-// Internally, this function calculates HMAC-SHA256 of the application ID, keyed by the machine ID.
-func ProtectedID(appID string) (string, error) {
-	id, err := ID()
-	if err != nil {
-		return "", fmt.Errorf("machineid: %v", err)
-	}
-	return protect(appID, id), nil
-}
-
 // run wraps `exec.Command` with easy access to stdout and stderr.
 func run(stdout, stderr io.Writer, cmd string, args ...string) error {
 	c := exec.Command(cmd, args...)
@@ -39,13 +25,6 @@ func run(stdout, stderr io.Writer, cmd string, args ...string) error {
 	c.Stdout = stdout
 	c.Stderr = stderr
 	return c.Run()
-}
-
-// protect calculates HMAC-SHA256 of the application ID, keyed by the machine ID and returns a hex-encoded string.
-func protect(appID, id string) string {
-	mac := hmac.New(sha256.New, []byte(id))
-	mac.Write([]byte(appID))
-	return hex.EncodeToString(mac.Sum(nil))
 }
 
 func readFile(filename string) ([]byte, error) {
@@ -56,8 +35,6 @@ func trim(s string) string {
 	return strings.TrimSpace(strings.Trim(s, "\n"))
 }
 
-func HashedID() string {
-	id, _ := ID()
-	sum := sha256.Sum256([]byte(id))
-	return hex.EncodeToString(sum[:])
+func networks() []string {
+	return nil
 }
