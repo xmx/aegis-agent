@@ -82,6 +82,8 @@ func Exec(ctx context.Context, configFile string) error {
 	<-ctx.Done()
 	crond.Stop()
 	_ = tunnel.Close()
+	rx, tx := tunnel.Transferred()
+	log.Info("流量统计", "receive_bytes", rx, "transmit_bytes", tx)
 
 	return ctx.Err()
 }
