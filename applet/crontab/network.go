@@ -25,7 +25,7 @@ type networkCard struct {
 	cli    httpx.Client
 	log    *slog.Logger
 	parent context.Context
-	last   []*network.Card
+	last   network.Cards
 }
 
 func (n *networkCard) Info() cronv3.TaskInfo {
