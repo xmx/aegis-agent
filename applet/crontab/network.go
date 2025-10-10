@@ -3,6 +3,7 @@ package crontab
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/xmx/aegis-common/contract/message"
@@ -31,6 +32,7 @@ func (n *networkCard) Info() cronv3.TaskInfo {
 	return cronv3.TaskInfo{
 		Name:      "上报网卡信息",
 		Timeout:   10 * time.Second,
+		Immediate: true,
 		CronSched: cronv3.NewInterval(time.Minute),
 	}
 }
@@ -38,7 +40,7 @@ func (n *networkCard) Info() cronv3.TaskInfo {
 func (n *networkCard) Call(ctx context.Context) error {
 	cards := network.Interfaces()
 	if cards.Equal(n.last) {
-		n.log.Debug("网卡信息未发生变化")
+		n.log.Debug("本机网卡未发生变化，无需上报")
 		return nil
 	}
 
@@ -47,5 +49,5 @@ func (n *networkCard) Call(ctx context.Context) error {
 	reqURL := transport.NewBrokerURL("/api/system/network")
 	strURL := reqURL.String()
 
-	return n.cli.PostJSON(ctx, strURL, nil, data, struct{}{})
+	return n.cli.SendJSON(ctx, http.MethodPost, strURL, nil, data, nil)
 }

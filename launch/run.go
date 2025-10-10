@@ -54,7 +54,7 @@ func Exec(ctx context.Context, configFile string) error {
 
 	dialer := tunutil.NewMatchDialer(systemDialer, tunutil.NewHostMatch(tunutil.BrokerHost, tunnelDialer))
 	httpTransport := &http.Transport{DialContext: dialer.DialContext}
-	httpCli := httpx.Client{Client: &http.Client{Transport: httpTransport}}
+	httpCli := httpx.NewClient(&http.Client{Transport: httpTransport})
 	crond := cronv3.New(ctx, log, cron.WithSeconds())
 	crond.Start()
 
