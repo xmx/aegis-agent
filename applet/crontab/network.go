@@ -49,5 +49,11 @@ func (n *networkCard) Call(ctx context.Context) error {
 	reqURL := transport.NewBrokerURL("/api/system/network")
 	strURL := reqURL.String()
 
-	return n.cli.SendJSON(ctx, http.MethodPost, strURL, nil, data, nil)
+	err := n.cli.SendJSON(ctx, http.MethodPost, strURL, nil, data, nil)
+	if err != nil {
+		return err
+	}
+	n.last = cards
+
+	return nil
 }
