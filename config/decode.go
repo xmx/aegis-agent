@@ -43,7 +43,7 @@ func (j jsdecoder) decode(ctx context.Context, filename string) (*HideConfig, er
 	stderr.Attach(os.Stderr)
 
 	cfg := new(HideConfig)
-	varb := jsmod.NewVariable[*HideConfig]("aegis/agent/config")
+	varb := jsmod.NewVariable[HideConfig]("aegis/agent/config")
 	varb.Set(cfg)
 	require := vm.Require()
 	require.Registers(jsmod.Modules())
