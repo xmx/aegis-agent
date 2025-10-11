@@ -2,11 +2,7 @@ package clientd
 
 import (
 	"context"
-	"encoding/binary"
-	"encoding/json/v2"
-	"io"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/user"
@@ -14,9 +10,11 @@ import (
 	"time"
 
 	"github.com/xmx/aegis-agent/machine"
+	"github.com/xmx/aegis-common/contract/authmesg"
 	"github.com/xmx/aegis-common/library/timex"
 	"github.com/xmx/aegis-common/options"
 	"github.com/xmx/aegis-common/tunnel/tundial"
+	"github.com/xmx/aegis-common/tunnel/tunutil"
 )
 
 func Open(cfg tundial.Config, opts ...options.Lister[option]) (tundial.Muxer, error) {
@@ -50,7 +48,7 @@ func (ac *agentClient) Muxer() tundial.Muxer {
 
 func (ac *agentClient) opens() (tundial.Muxer, error) {
 	id, _ := machine.ID()
-	req := &authRequest{
+	req := &authmesg.AgentToBrokerRequest{
 		MachineID: id,
 		Goos:      runtime.GOOS,
 		Goarch:    runtime.GOARCH,
@@ -70,7 +68,7 @@ func (ac *agentClient) opens() (tundial.Muxer, error) {
 		reties++ // 连接次数累加
 
 		mux, res, err := ac.open(req)
-		if err == nil && res.successful() {
+		if err == nil && res.Succeed() {
 			return mux, nil
 		}
 
@@ -83,7 +81,7 @@ func (ac *agentClient) opens() (tundial.Muxer, error) {
 	}
 }
 
-func (ac *agentClient) open(req *authRequest) (tundial.Muxer, *authResponse, error) {
+func (ac *agentClient) open(req *authmesg.AgentToBrokerRequest) (tundial.Muxer, *authmesg.BrokerToAgentResponse, error) {
 	mux, err := tundial.Open(ac.cfg)
 	if err != nil {
 		ac.log().Info("基础网络连接失败", "error", err)
@@ -106,18 +104,24 @@ func (ac *agentClient) open(req *authRequest) (tundial.Muxer, *authResponse, err
 	if res != nil {
 		attrs = append(attrs, slog.Any("auth_response", res))
 	}
-	if err1 == nil && res != nil && res.successful() {
+	if err1 == nil && res != nil && res.Succeed() {
 		ac.log().Info("通道连接认证成功", attrs...)
 		return mux, res, nil
 	}
 
+	if res != nil {
+		attrs = append(attrs, slog.Any("agent_auth_response", res))
+	}
+	if err1 != nil {
+		attrs = append(attrs, slog.Any("error", err1))
+	}
 	_ = mux.Close() // 关闭连接
 	ac.log().Warn("基础网络连接成功但认证失败", attrs...)
 
 	return nil, res, err1
 }
 
-func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
+func (ac *agentClient) authentication(mux tundial.Muxer, req *authmesg.AgentToBrokerRequest, timeout time.Duration) (*authmesg.BrokerToAgentResponse, error) {
 	ctx, cancel := context.WithTimeout(ac.cfg.Parent, timeout)
 	defer cancel()
 
@@ -130,11 +134,11 @@ func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeo
 
 	now := time.Now()
 	_ = conn.SetDeadline(now.Add(timeout))
-	if err = ac.writeHead(conn, req); err != nil {
+	if err = tunutil.WriteHead(conn, req); err != nil {
 		return nil, err
 	}
-	resp := new(authResponse)
-	err = ac.readHead(conn, resp)
+	resp := new(authmesg.BrokerToAgentResponse)
+	err = tunutil.ReadHead(conn, resp)
 
 	return resp, err
 }
@@ -159,24 +163,6 @@ func (ac *agentClient) serve(mux tundial.Muxer) {
 
 		ac.mux.Store(mux)
 	}
-}
-
-func (*agentClient) writeAuthRequest(c net.Conn, v any) error {
-	if err := json.MarshalWrite(c, v); err != nil {
-		return err
-	}
-	_, err := c.Write([]byte{'\n'})
-
-	return err
-}
-
-func (*agentClient) readAuthResponse(c net.Conn) (*authResponse, error) {
-	res := new(authResponse)
-	if err := json.UnmarshalRead(c, res); err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }
 
 // backoff 通过持续连接耗费的时间和次数，计算出一个合理的重试时间。
@@ -205,47 +191,4 @@ func (ac *agentClient) log() *slog.Logger {
 	}
 
 	return slog.Default()
-}
-
-func (ac *agentClient) writeHead(w io.Writer, v any) error {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	n := len(data)
-	if n > 65535 {
-		return io.ErrUnexpectedEOF
-	}
-
-	size := make([]byte, 2)
-	binary.BigEndian.PutUint16(size, uint16(n))
-	if _, err = w.Write(size); err == nil {
-		_, err = w.Write(data)
-	}
-
-	return err
-}
-
-func (ac *agentClient) readHead(r io.Reader, v any) error {
-	size := make([]byte, 2)
-	if n, err := r.Read(size); err != nil {
-		return err
-	} else if n != 2 {
-		return io.ErrShortBuffer
-	}
-
-	n := binary.BigEndian.Uint16(size)
-	if n == 0 {
-		return io.EOF
-	}
-
-	data := make([]byte, n)
-	num, err := io.ReadFull(r, data)
-	if err != nil {
-		return err
-	} else if num != int(n) {
-		return io.ErrShortBuffer
-	}
-
-	return json.Unmarshal(data, v)
 }
