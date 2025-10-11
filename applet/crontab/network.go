@@ -10,7 +10,7 @@ import (
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpx"
 	"github.com/xmx/aegis-common/system/network"
-	"github.com/xmx/aegis-common/transport"
+	"github.com/xmx/aegis-common/tunnel/tunutil"
 )
 
 func NewNetwork(parent context.Context, cli httpx.Client, log *slog.Logger) cronv3.Tasker {
@@ -46,7 +46,7 @@ func (n *networkCard) Call(ctx context.Context) error {
 
 	n.last = cards
 	data := &message.Data[[]*network.Card]{Data: cards}
-	reqURL := transport.NewBrokerURL("/api/system/network")
+	reqURL := tunutil.AgentToBroker("/api/system/network")
 	strURL := reqURL.String()
 
 	err := n.cli.SendJSON(ctx, http.MethodPost, strURL, nil, data, nil)

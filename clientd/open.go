@@ -2,7 +2,9 @@ package clientd
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json/v2"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -128,11 +130,13 @@ func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeo
 
 	now := time.Now()
 	_ = conn.SetDeadline(now.Add(timeout))
-	if err = ac.writeAuthRequest(conn, req); err != nil {
+	if err = ac.writeHead(conn, req); err != nil {
 		return nil, err
 	}
+	resp := new(authResponse)
+	err = ac.readHead(conn, resp)
 
-	return ac.readAuthResponse(conn)
+	return resp, err
 }
 
 func (ac *agentClient) serve(mux tundial.Muxer) {
@@ -158,7 +162,12 @@ func (ac *agentClient) serve(mux tundial.Muxer) {
 }
 
 func (*agentClient) writeAuthRequest(c net.Conn, v any) error {
-	return json.MarshalWrite(c, v)
+	if err := json.MarshalWrite(c, v); err != nil {
+		return err
+	}
+	_, err := c.Write([]byte{'\n'})
+
+	return err
 }
 
 func (*agentClient) readAuthResponse(c net.Conn) (*authResponse, error) {
@@ -196,4 +205,47 @@ func (ac *agentClient) log() *slog.Logger {
 	}
 
 	return slog.Default()
+}
+
+func (ac *agentClient) writeHead(w io.Writer, v any) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	n := len(data)
+	if n > 65535 {
+		return io.ErrUnexpectedEOF
+	}
+
+	size := make([]byte, 2)
+	binary.BigEndian.PutUint16(size, uint16(n))
+	if _, err = w.Write(size); err == nil {
+		_, err = w.Write(data)
+	}
+
+	return err
+}
+
+func (ac *agentClient) readHead(r io.Reader, v any) error {
+	size := make([]byte, 2)
+	if n, err := r.Read(size); err != nil {
+		return err
+	} else if n != 2 {
+		return io.ErrShortBuffer
+	}
+
+	n := binary.BigEndian.Uint16(size)
+	if n == 0 {
+		return io.EOF
+	}
+
+	data := make([]byte, n)
+	num, err := io.ReadFull(r, data)
+	if err != nil {
+		return err
+	} else if num != int(n) {
+		return io.ErrShortBuffer
+	}
+
+	return json.Unmarshal(data, v)
 }
