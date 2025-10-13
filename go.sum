@@ -40,8 +40,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/xgfone/ship/v5 v5.3.2 h1:PFFNyCTT8psAfeizDexFX33SgFJpVikPuSMcjYxqGJA=
 github.com/xgfone/ship/v5 v5.3.2/go.mod h1:mGI+65lLL3kaOseMkWUYgy+OFl27WV2LY1NSsecu/9g=
-github.com/xmx/aegis-common v0.0.0-20251011033324-45b7b551eae3 h1:xCKM/OwSUhOCiTVkzW1K4TY3PcaJ9nIr28N4akRj04A=
-github.com/xmx/aegis-common v0.0.0-20251011033324-45b7b551eae3/go.mod h1:Rbi5zIvkolbWmlqP5HFvx4C+MKXEPOI+DYkGlkezEd8=
+github.com/xmx/aegis-common v0.0.0-20251013124854-35a1da585f1a h1:Rrs+RZ266CnkKYTZmsw0aO1/aJFM+8VlsytINWeE5NI=
+github.com/xmx/aegis-common v0.0.0-20251013124854-35a1da585f1a/go.mod h1:Rbi5zIvkolbWmlqP5HFvx4C+MKXEPOI+DYkGlkezEd8=
 github.com/xtaci/smux v1.5.35 h1:RosihGJBeaS8gxOZ17HNxbhONwnqQwNwusHx4+SEGhk=
 github.com/xtaci/smux v1.5.35/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
