@@ -46,6 +46,7 @@ resources/test
 resources/app
 
 crash.txt
+.crash.txt
 *.crash.txt
 *.cast
 *.upx

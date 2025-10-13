@@ -37,7 +37,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), signals...)
 	defer cancel()
 
-	if err := launch.Exec(ctx, *cfg); err != nil {
+	if err := launch.Run(ctx, *cfg); err != nil {
 		slog.Error("服务运行错误", slog.Any("error", err))
 	} else {
 		slog.Info("服务停止运行")

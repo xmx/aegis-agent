@@ -15,25 +15,33 @@ import (
 	"github.com/xmx/aegis-agent/config"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpx"
+	"github.com/xmx/aegis-common/library/validation"
 	"github.com/xmx/aegis-common/logger"
+	"github.com/xmx/aegis-common/profile"
 	"github.com/xmx/aegis-common/shipx"
 	"github.com/xmx/aegis-common/tunnel/tundial"
 	"github.com/xmx/aegis-common/tunnel/tunutil"
-	"github.com/xmx/aegis-common/validation"
 )
 
-func Exec(ctx context.Context, configFile string) error {
+func Run(ctx context.Context, cfg string) error {
+	// 2<<22 = 8388608 (8 MiB)
+	opt := profile.NewOption().Limit(2 << 22).ModuleName("aegis/agent/config")
+	crd := profile.NewFile[config.Config](cfg, opt)
+
+	return Exec(ctx, crd)
+}
+
+func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	consoleOut := logger.NewTint(os.Stdout)
 	logHandler := logger.NewHandler(consoleOut)
 	log := slog.New(logHandler)
 
-	configLoader := config.File(configFile)
-	cfg, err := configLoader.Load(ctx)
+	cfg, err := crd.Read(ctx)
 	if err != nil {
 		log.Error("加载配置文件错误", "error", err)
 	}
 	if cfg == nil {
-		cfg = &config.HideConfig{}
+		cfg = &config.Config{}
 	}
 
 	valid := validation.New()
