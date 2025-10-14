@@ -32,16 +32,16 @@ func Run(ctx context.Context, cfg string) error {
 }
 
 func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
-	consoleOut := logger.NewTint(os.Stdout)
-	logHandler := logger.NewHandler(consoleOut)
+	logHandler := logger.NewHandler(logger.NewTint(os.Stdout))
 	log := slog.New(logHandler)
 
+	// 即便配置文件加载错误，尽量使用默认值启动。
 	cfg, err := crd.Read(ctx)
 	if err != nil {
 		log.Error("加载配置文件错误", "error", err)
 	}
 	if cfg == nil {
-		cfg = &config.Config{}
+		cfg = new(config.Config)
 	}
 
 	valid := validation.New()
@@ -52,6 +52,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		PerTimeout: 10 * time.Second,
 		Parent:     ctx,
 	}
+	log.Info("开始连接 broker 服务器")
 	cliOpt := clientd.NewOption().Handler(brkHandler).Logger(log)
 	tunnel, err := clientd.Open(tunCfg, cliOpt)
 	if err != nil {

@@ -82,9 +82,10 @@ func (ac *agentClient) opens() (tundial.Muxer, error) {
 }
 
 func (ac *agentClient) open(req *authmesg.AgentToBrokerRequest) (tundial.Muxer, *authmesg.BrokerToAgentResponse, error) {
+	addresses := ac.cfg.Addresses
 	mux, err := tundial.Open(ac.cfg)
 	if err != nil {
-		ac.log().Info("基础网络连接失败", "error", err)
+		ac.log().Info("基础网络连接失败", "error", err, "addresses", addresses)
 		return nil, nil, err
 	}
 
@@ -94,6 +95,7 @@ func (ac *agentClient) open(req *authmesg.AgentToBrokerRequest) (tundial.Muxer, 
 		slog.Any("remote_addr", mux.RemoteAddr()),
 		slog.Any("protocol", protocol),
 		slog.Any("subprotocol", subprotocol),
+		slog.Any("addresses", addresses),
 	}
 	ac.log().Info("基础网络连接成功", attrs...)
 
