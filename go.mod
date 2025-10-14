@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20251013124854-35a1da585f1a
+	github.com/xmx/aegis-common v0.0.0-20251014111001-9fd22501bf25
 	golang.org/x/sys v0.37.0
 )
 
