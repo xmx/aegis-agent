@@ -58,12 +58,13 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	if err != nil {
 		return err
 	}
-	systemDialer := tunutil.DefaultDialer()         // 系统默认 dialer
-	tunnelDialer := tunutil.NewTunnelDialer(tunnel) // 将 tunnel 改造成 dialer
-
-	dialer := tunutil.NewMatchDialer(systemDialer, tunutil.NewHostMatch(tunutil.BrokerHost, tunnelDialer))
+	defaultDialer := tunutil.DefaultDialer()     // 系统默认 dialer
+	tunnelDialer := tunutil.NewMuxDialer(tunnel) // 将 tunnel 改造成 dialer
+	brokerDialer := tunutil.NewHostMatchDialer(tunutil.BrokerHost, tunnelDialer)
+	dialer := tunutil.NewMatchDialer(defaultDialer, brokerDialer)
 	httpTransport := &http.Transport{DialContext: dialer.DialContext}
 	httpCli := httpx.NewClient(&http.Client{Transport: httpTransport})
+
 	crond := cronv3.New(ctx, log, cron.WithSeconds())
 	crond.Start()
 
