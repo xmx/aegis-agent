@@ -1,12 +1,12 @@
 module github.com/xmx/aegis-agent
 
-go 1.25.1
+go 1.25.3
 
 require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20251015062753-290ce41ade5c
+	github.com/xmx/aegis-common v0.0.0-20251015073437-07d29360dc40
 	golang.org/x/sys v0.37.0
 )
 

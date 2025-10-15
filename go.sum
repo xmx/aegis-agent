@@ -4,8 +4,6 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.5 h1:Q/sSnsKerHeCkc/jSTNq1oCm7KiVgUMZRDUoRu0JQZQ=
 github.com/dlclark/regexp2 v1.11.5/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/evanw/esbuild v0.25.10 h1:8cl6FntLWO4AbqXWqMWgYrvdm8lLSFm5HjU/HY2N27E=
-github.com/evanw/esbuild v0.25.10/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
 github.com/evanw/esbuild v0.25.11 h1:NGtezc+xk+Mti4fgWaoD3dncZNCzcTA+r0BxMV3Koyw=
 github.com/evanw/esbuild v0.25.11/go.mod h1:D2vIQZqV/vIf/VRHtViaUtViZmG7o+kKmlBfVQuRi48=
 github.com/gabriel-vasile/mimetype v1.4.10 h1:zyueNbySn/z8mJZHLt6IPw0KoZsiQNszIpU+bX4+ZK0=
@@ -42,12 +40,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/xgfone/ship/v5 v5.3.2 h1:PFFNyCTT8psAfeizDexFX33SgFJpVikPuSMcjYxqGJA=
 github.com/xgfone/ship/v5 v5.3.2/go.mod h1:mGI+65lLL3kaOseMkWUYgy+OFl27WV2LY1NSsecu/9g=
-github.com/xmx/aegis-common v0.0.0-20251013124854-35a1da585f1a h1:Rrs+RZ266CnkKYTZmsw0aO1/aJFM+8VlsytINWeE5NI=
-github.com/xmx/aegis-common v0.0.0-20251013124854-35a1da585f1a/go.mod h1:Rbi5zIvkolbWmlqP5HFvx4C+MKXEPOI+DYkGlkezEd8=
-github.com/xmx/aegis-common v0.0.0-20251014111001-9fd22501bf25 h1:hkKwdkvmR9+2j1RIgkOnQIHEBobx6NeHAMEu3TYChFg=
-github.com/xmx/aegis-common v0.0.0-20251014111001-9fd22501bf25/go.mod h1:Rbi5zIvkolbWmlqP5HFvx4C+MKXEPOI+DYkGlkezEd8=
-github.com/xmx/aegis-common v0.0.0-20251015062753-290ce41ade5c h1:R5IJ2RPDXhO6GCJgnrwPJ+cq0sp5ITxV/9qbXGagh2o=
-github.com/xmx/aegis-common v0.0.0-20251015062753-290ce41ade5c/go.mod h1:7q5Vv/gP4pwnLraGT0ox7T4CyUeqrTQhgPcP/b6zxic=
+github.com/xmx/aegis-common v0.0.0-20251015073437-07d29360dc40 h1:EvU/1NmnSx2fATmsPadsb7KSaktCMCmUOkeisuiJhBM=
+github.com/xmx/aegis-common v0.0.0-20251015073437-07d29360dc40/go.mod h1:mdssQMCD0dbZ8KJWoghDfgeXrIOOoJItqwE4RUajM+4=
 github.com/xtaci/smux v1.5.35 h1:RosihGJBeaS8gxOZ17HNxbhONwnqQwNwusHx4+SEGhk=
 github.com/xtaci/smux v1.5.35/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
