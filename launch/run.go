@@ -75,6 +75,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		shipx.NewPprof(),
 		shipx.NewHealth(),
 		restapi.NewSystem(tunnel),
+		restapi.NewEcho(),
 	}
 	shipLog := logger.NewShip(logHandler, 6)
 	brkSH := ship.Default()
