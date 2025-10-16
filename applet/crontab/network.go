@@ -2,30 +2,25 @@ package crontab
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/xmx/aegis-common/contract/message"
 	"github.com/xmx/aegis-common/library/cronv3"
-	"github.com/xmx/aegis-common/library/httpx"
+	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/system/network"
 	"github.com/xmx/aegis-common/tunnel/tunutil"
 )
 
-func NewNetwork(parent context.Context, cli httpx.Client, log *slog.Logger) cronv3.Tasker {
+func NewNetwork(cli httpkit.Client) cronv3.Tasker {
 	return &networkCard{
-		cli:    cli,
-		log:    log,
-		parent: parent,
+		cli: cli,
 	}
 }
 
 type networkCard struct {
-	cli    httpx.Client
-	log    *slog.Logger
-	parent context.Context
-	last   network.Cards
+	cli  httpkit.Client
+	last network.Cards
 }
 
 func (n *networkCard) Info() cronv3.TaskInfo {
@@ -40,7 +35,6 @@ func (n *networkCard) Info() cronv3.TaskInfo {
 func (n *networkCard) Call(ctx context.Context) error {
 	cards := network.Interfaces()
 	if cards.Equal(n.last) {
-		n.log.Debug("本机网卡未发生变化，无需上报")
 		return nil
 	}
 

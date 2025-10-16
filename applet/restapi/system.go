@@ -4,10 +4,9 @@ import (
 	"net/http"
 
 	"github.com/xgfone/ship/v5"
-	"github.com/xmx/aegis-common/tunnel/tundial"
 )
 
-func NewSystem(tun tundial.Muxer) *System {
+func NewSystem() *System {
 	return &System{}
 }
 

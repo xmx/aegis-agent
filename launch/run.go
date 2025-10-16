@@ -11,10 +11,13 @@ import (
 	"github.com/xgfone/ship/v5"
 	"github.com/xmx/aegis-agent/applet/crontab"
 	"github.com/xmx/aegis-agent/applet/restapi"
+	"github.com/xmx/aegis-agent/applet/service"
 	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
+	"github.com/xmx/aegis-common/jsos/jsexec"
+	"github.com/xmx/aegis-common/jsos/jsmod"
 	"github.com/xmx/aegis-common/library/cronv3"
-	"github.com/xmx/aegis-common/library/httpx"
+	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/library/validation"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/profile"
@@ -45,7 +48,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 
 	valid := validation.New()
-	brkHandler := httpx.NewAtomicHandler(nil)
+	brkHandler := httpkit.NewAtomicHandler(nil)
 	tunCfg := tundial.Config{
 		Protocols:  cfg.Protocols,
 		Addresses:  cfg.Addresses,
@@ -54,28 +57,39 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 	log.Info("开始连接 broker 服务器")
 	cliOpt := clientd.NewOption().Handler(brkHandler).Logger(log)
-	tunnel, err := clientd.Open(tunCfg, cliOpt)
+	mux, err := clientd.Open(tunCfg, cliOpt)
 	if err != nil {
 		return err
 	}
-	defaultDialer := tunutil.DefaultDialer()     // 系统默认 dialer
-	tunnelDialer := tunutil.NewMuxDialer(tunnel) // 将 tunnel 改造成 dialer
-	brokerDialer := tunutil.NewHostMatchDialer(tunutil.BrokerHost, tunnelDialer)
+	defaultDialer := tunutil.DefaultDialer() // 系统默认 dialer
+	muxDialer := tunutil.NewMuxDialer(mux)   // 将 tunnel 改造成 dialer
+	brokerDialer := tunutil.NewHostMatchDialer(tunutil.BrokerHost, muxDialer)
 	dialer := tunutil.NewMatchDialer(defaultDialer, brokerDialer)
 	httpTransport := &http.Transport{DialContext: dialer.DialContext}
-	httpCli := httpx.NewClient(&http.Client{Transport: httpTransport})
+	httpCli := httpkit.NewClient(&http.Client{Transport: httpTransport})
 
 	crond := cronv3.New(ctx, log, cron.WithSeconds())
 	crond.Start()
 
-	networkTask := crontab.NewNetwork(ctx, httpCli, log)
-	_, _ = crond.AddTask(networkTask)
+	cronTasks := []cronv3.Tasker{
+		crontab.NewNetwork(httpCli),
+	}
+	for _, task := range cronTasks {
+		_, _ = crond.AddTask(task)
+	}
+
+	modules := jsmod.Modules()
+	modules = append(modules, jsmod.NewCrontab(crond))
+	jsmOpt := jsexec.NewOption().Modules(modules)
+	jsManager := jsexec.NewManager(jsmOpt)
+	taskSvc := service.NewTask(jsManager, log)
 
 	brokerAPIs := []shipx.RouteRegister{
 		shipx.NewPprof(),
 		shipx.NewHealth(),
-		restapi.NewSystem(tunnel),
+		restapi.NewSystem(),
 		restapi.NewEcho(),
+		restapi.NewTask(taskSvc),
 	}
 	shipLog := logger.NewShip(logHandler, 6)
 	brkSH := ship.Default()
@@ -92,8 +106,8 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 
 	<-ctx.Done()
 	crond.Stop()
-	_ = tunnel.Close()
-	rx, tx := tunnel.Transferred()
+	_ = mux.Close()
+	rx, tx := mux.Transferred()
 	log.Info("流量统计", "receive_bytes", rx, "transmit_bytes", tx)
 
 	return ctx.Err()
