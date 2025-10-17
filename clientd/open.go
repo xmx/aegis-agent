@@ -163,7 +163,7 @@ func (ac *agentClient) serve(mux tundial.Muxer) {
 			break
 		}
 
-		ac.mux.Store(mux)
+		ac.mux.Swap(mux)
 	}
 }
 

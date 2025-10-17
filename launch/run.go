@@ -48,7 +48,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 
 	valid := validation.New()
-	brkHandler := httpkit.NewAtomicHandler(nil)
+	brkHandler := httpkit.NewHandler()
 	tunCfg := tundial.Config{
 		Protocols:  cfg.Protocols,
 		Addresses:  cfg.Addresses,
