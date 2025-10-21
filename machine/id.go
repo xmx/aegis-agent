@@ -1,6 +1,8 @@
 package machine
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +17,10 @@ func ID() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("machineid: %v", err)
 	}
-	return id, nil
+	sum := sha1.Sum([]byte(id))
+	mid := hex.EncodeToString(sum[:])
+
+	return mid, nil
 }
 
 // run wraps `exec.Command` with easy access to stdout and stderr.
@@ -33,8 +38,4 @@ func readFile(filename string) ([]byte, error) {
 
 func trim(s string) string {
 	return strings.TrimSpace(strings.Trim(s, "\n"))
-}
-
-func networks() []string {
-	return nil
 }
