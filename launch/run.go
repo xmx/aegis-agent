@@ -27,19 +27,17 @@ import (
 )
 
 func Run(ctx context.Context, cfg string) error {
-	// 2<<22 = 8388608 (8 MiB)
-	opt := profile.NewOption().Limit(2 << 22).ModuleName("aegis/agent/config")
-	crd := profile.NewFile[config.Config](cfg, opt)
+	cfr := profile.File[config.Config](cfg)
 
-	return Exec(ctx, crd)
+	return Exec(ctx, cfr)
 }
 
 func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
-	logHandler := logger.NewHandler(logger.NewTint(os.Stdout))
+	logHandler := logger.NewHandler(logger.NewTint(os.Stdout, nil))
 	log := slog.New(logHandler)
 
 	// 即便配置文件加载错误，尽量使用默认值启动。
-	cfg, err := crd.Read(ctx)
+	cfg, err := crd.Read()
 	if err != nil {
 		log.Error("加载配置文件错误", "error", err)
 	}
