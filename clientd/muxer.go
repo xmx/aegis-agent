@@ -22,7 +22,10 @@ func (sm *safeMuxer) Transferred() (rx, tx uint64)               { return sm.loa
 
 func (sm *safeMuxer) store(mux tundial.Muxer) {
 	if mux == nil {
-		panic("nil muxer is not allowed")
+		panic("通道不能为空")
+	}
+	if _, ok := mux.(*safeMuxer); ok {
+		panic("通道类型错误")
 	}
 	sm.ptr.Store(&mux)
 }

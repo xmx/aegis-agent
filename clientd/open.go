@@ -122,6 +122,7 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tundial.Mu
 	ac.log().Info("基础网络连接成功，开始交换认证报文", attrs...)
 	res, err1 := ac.authentication(mux, req, timeout)
 	if err1 != nil {
+		_ = mux.Close()
 		attrs = append(attrs, slog.Any("error", err1))
 		ac.log().Warn("认证报文交换错误", attrs...)
 		return nil, nil, err1
@@ -129,6 +130,7 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tundial.Mu
 
 	attrs = append(attrs, slog.Any("auth_response", res))
 	if err = res.checkError(); err != nil {
+		_ = mux.Close()
 		attrs = append(attrs, slog.Any("error", err))
 		ac.log().Warn("基础网络连接成功但认证未通过", attrs...)
 		return nil, res, err
