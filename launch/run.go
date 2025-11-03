@@ -53,7 +53,6 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		PerTimeout: 10 * time.Second,
 		Parent:     ctx,
 	}
-	log.Info("开始连接 broker 服务器")
 	cliOpt := clientd.NewOption().Handler(brkHandler).Logger(log)
 	mux, err := clientd.Open(tunCfg, cliOpt)
 	if err != nil {

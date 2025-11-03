@@ -3,14 +3,12 @@ package clientd
 import (
 	"context"
 	"log/slog"
-	"net/http"
+	"net"
 	"os"
 	"os/user"
 	"runtime"
 	"time"
 
-	"github.com/xmx/aegis-agent/machine"
-	"github.com/xmx/aegis-common/contract/authmesg"
 	"github.com/xmx/aegis-common/library/timex"
 	"github.com/xmx/aegis-common/options"
 	"github.com/xmx/aegis-common/tunnel/tundial"
@@ -21,35 +19,36 @@ func Open(cfg tundial.Config, opts ...options.Lister[option]) (tundial.Muxer, er
 	if cfg.Parent == nil {
 		cfg.Parent = context.Background()
 	}
+	opts = append(opts, fallbackOptions())
 	opt := options.Eval(opts...)
 
-	ac := &agentClient{cfg: cfg, opt: opt}
-	mux, err := ac.opens()
-	if err != nil {
+	mux := new(safeMuxer)
+	ac := &agentClient{cfg: cfg, opt: opt, mux: mux}
+	if err := ac.opens(); err != nil {
 		return nil, err
 	}
 
-	amux := tundial.MakeAtomic(mux)
-	ac.mux = amux
 	go ac.serve(mux)
 
-	return amux, nil
+	return mux, nil
 }
 
 type agentClient struct {
-	cfg tundial.Config
-	opt option
-	mux tundial.AtomicMuxer
+	cfg     tundial.Config
+	opt     option
+	mux     *safeMuxer
+	rebuild bool
 }
 
 func (ac *agentClient) Muxer() tundial.Muxer {
 	return ac.mux
 }
 
-func (ac *agentClient) opens() (tundial.Muxer, error) {
-	id, _ := machine.ID()
-	req := &authmesg.AgentToBrokerRequest{
-		MachineID: id,
+func (ac *agentClient) opens() error {
+	ac.log().Info("准备连接 broker 服务", "addresses", ac.cfg.Addresses)
+	machineID := ac.opt.ident.MachineID(false)
+	req := &authRequest{
+		MachineID: machineID,
 		Goos:      runtime.GOOS,
 		Goarch:    runtime.GOARCH,
 		PID:       os.Getpid(),
@@ -62,68 +61,84 @@ func (ac *agentClient) opens() (tundial.Muxer, error) {
 		req.Username = cu.Username
 	}
 
-	var reties int
-	startedAt := time.Now()
+	timeout := ac.cfg.PerTimeout
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+
+	var fails int
 	for {
-		reties++ // 连接次数累加
-
-		mux, res, err := ac.open(req)
-		if err == nil && res.Succeed() {
-			return mux, nil
+		mux, res, err := ac.open(req, timeout)
+		if err == nil {
+			ac.mux.store(mux)
+			return nil
 		}
 
-		sleep := ac.backoff(time.Since(startedAt), reties)
-		ac.log().Warn("等待重连", "reties", reties, "sleep", sleep, "error", err)
-		if err = timex.Sleep(ac.cfg.Parent, sleep); err != nil {
+		fails++
+		wait := ac.waitTime(fails)
+		ac.log().Warn("等待重连", "fails", fails, "sleep", wait, "error", err)
+		if err = timex.Sleep(ac.cfg.Parent, wait); err != nil {
 			ac.log().Error("不满足继续重试连接的条件", "error", err)
-			return nil, err
+			return err
 		}
+
+		if res == nil || !res.conflicted() || ac.rebuild {
+			continue
+		}
+
+		// 检测到该机器码已经是在线状态，尝试重新生产机器码。
+		ac.rebuild = true
+		beforeID := req.MachineID
+		afterID := ac.opt.ident.MachineID(true)
+		if beforeID == afterID {
+			ac.log().Info("生成的机器码前后一致", "machine_id", beforeID)
+			continue
+		}
+
+		req.MachineID = afterID
+		ac.log().Warn("重新生成了新的机器码", "before_id", beforeID, "after_id", afterID)
 	}
 }
 
-func (ac *agentClient) open(req *authmesg.AgentToBrokerRequest) (tundial.Muxer, *authmesg.BrokerToAgentResponse, error) {
-	addresses := ac.cfg.Addresses
+func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tundial.Muxer, *authResponse, error) {
+	attrs := []any{slog.Any("addresses", ac.cfg.Addresses)}
 	mux, err := tundial.Open(ac.cfg)
 	if err != nil {
-		ac.log().Info("基础网络连接失败", "error", err, "addresses", addresses)
+		attrs = append(attrs, slog.Any("error", err))
+		ac.log().Warn("基础网络连接失败", attrs...)
 		return nil, nil, err
 	}
 
+	laddr, raddr := mux.Addr(), mux.RemoteAddr()
 	protocol, subprotocol := mux.Protocol()
-	attrs := []any{
-		slog.Any("local_addr", mux.Addr()),
-		slog.Any("remote_addr", mux.RemoteAddr()),
+	attrs = append(attrs,
 		slog.Any("protocol", protocol),
 		slog.Any("subprotocol", subprotocol),
-		slog.Any("addresses", addresses),
-	}
-	ac.log().Info("基础网络连接成功", attrs...)
+		slog.Any("local_addr", laddr),
+		slog.Any("remote_addr", raddr),
+	)
+	req.Inet = ac.checkIP(laddr).String()
 
-	res, err1 := ac.authentication(mux, req, time.Minute)
+	ac.log().Info("基础网络连接成功，开始交换认证报文", attrs...)
+	res, err1 := ac.authentication(mux, req, timeout)
 	if err1 != nil {
 		attrs = append(attrs, slog.Any("error", err1))
-	}
-	if res != nil {
-		attrs = append(attrs, slog.Any("auth_response", res))
-	}
-	if err1 == nil && res != nil && res.Succeed() {
-		ac.log().Info("通道连接认证成功", attrs...)
-		return mux, res, nil
+		ac.log().Warn("认证报文交换错误", attrs...)
+		return nil, nil, err1
 	}
 
-	if res != nil {
-		attrs = append(attrs, slog.Any("agent_auth_response", res))
+	attrs = append(attrs, slog.Any("auth_response", res))
+	if err = res.checkError(); err != nil {
+		attrs = append(attrs, slog.Any("error", err))
+		ac.log().Warn("基础网络连接成功但认证未通过", attrs...)
+		return nil, res, err
 	}
-	if err1 != nil {
-		attrs = append(attrs, slog.Any("error", err1))
-	}
-	_ = mux.Close() // 关闭连接
-	ac.log().Warn("基础网络连接成功但认证失败", attrs...)
+	ac.log().Info("通道连接认证成功", attrs...)
 
-	return nil, res, err1
+	return mux, res, nil
 }
 
-func (ac *agentClient) authentication(mux tundial.Muxer, req *authmesg.AgentToBrokerRequest, timeout time.Duration) (*authmesg.BrokerToAgentResponse, error) {
+func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
 	ctx, cancel := context.WithTimeout(ac.cfg.Parent, timeout)
 	defer cancel()
 
@@ -136,55 +151,41 @@ func (ac *agentClient) authentication(mux tundial.Muxer, req *authmesg.AgentToBr
 
 	now := time.Now()
 	_ = conn.SetDeadline(now.Add(timeout))
-	if err = tunutil.WriteHead(conn, req); err != nil {
+	if err = tunutil.WriteAuth(conn, req); err != nil {
 		return nil, err
 	}
-	resp := new(authmesg.BrokerToAgentResponse)
-	err = tunutil.ReadHead(conn, resp)
+	resp := new(authResponse)
+	if err = tunutil.ReadAuth(conn, resp); err != nil {
+		return nil, err
+	}
 
-	return resp, err
+	return resp, nil
 }
 
 func (ac *agentClient) serve(mux tundial.Muxer) {
-	srv := ac.opt.server
-	if srv == nil {
-		srv = &http.Server{Handler: http.NotFoundHandler()}
-	}
-
-	const sleep = 2 * time.Second
 	for {
+		srv := ac.opt.server
 		err := srv.Serve(mux)
 		_ = mux.Close()
 
-		ac.log().Warn("通道掉线了", "error", err, "sleep", sleep)
-		ctx := ac.cfg.Parent
-		_ = timex.Sleep(ctx, sleep)
-		if mux, err = ac.opens(); err != nil {
+		ac.log().Warn("agent 通道掉线了", "error", err)
+		if err = ac.opens(); err != nil {
 			break
 		}
-
-		ac.mux.Swap(mux)
 	}
 }
 
-// backoff 通过持续连接耗费的时间和次数，计算出一个合理的重试时间。
-func (ac *agentClient) backoff(elapsed time.Duration, reties int) time.Duration {
-	if reties < 60 {
+// waitTime 通过持续连接耗费的时间和次数，计算出一个合理的重试时间。
+func (ac *agentClient) waitTime(fails int) time.Duration {
+	if fails <= 100 {
 		return 3 * time.Second
-	} else if reties < 200 {
+	} else if fails <= 300 {
 		return 10 * time.Second
-	} else if reties < 500 {
-		return 20 * time.Second
-	} else if reties < 1000 {
-		return time.Minute
+	} else if fails <= 500 {
+		return 30 * time.Second
 	}
 
-	const mouth = 30 * 24 * time.Hour
-	if elapsed < mouth {
-		return time.Minute
-	}
-
-	return 10 * time.Minute
+	return time.Minute
 }
 
 func (ac *agentClient) log() *slog.Logger {
@@ -193,4 +194,15 @@ func (ac *agentClient) log() *slog.Logger {
 	}
 
 	return slog.Default()
+}
+
+func (*agentClient) checkIP(a net.Addr) net.IP {
+	switch v := a.(type) {
+	case *net.TCPAddr:
+		return v.IP
+	case *net.UDPAddr:
+		return v.IP
+	}
+
+	return net.IPv4zero
 }
