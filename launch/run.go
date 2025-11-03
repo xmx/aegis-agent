@@ -88,7 +88,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		restapi.NewEcho(),
 		restapi.NewTask(taskSvc),
 	}
-	shipLog := logger.NewShip(logHandler, 6)
+	shipLog := logger.NewShip(logHandler)
 	brkSH := ship.Default()
 	brkSH.NotFound = shipx.NotFound
 	brkSH.HandleError = shipx.HandleError
