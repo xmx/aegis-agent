@@ -6,7 +6,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20251103024742-e84b3cdf3b09
+	github.com/xmx/aegis-common v0.0.0-20251104020216-1eae374158e6
 	golang.org/x/sys v0.37.0
 )
 
@@ -19,7 +19,7 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d // indirect
-	github.com/grafana/sobek v0.0.0-20251030131753-d05c9166857d // indirect
+	github.com/grafana/sobek v0.0.0-20251103154147-6b40183f38e5 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/quic-go/quic-go v0.55.0 // indirect
