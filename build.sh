@@ -20,3 +20,6 @@ done
 
 go env -w GOOS=${BEFORE_GOOS}
 go env -w GOARCH=${BEFORE_GOARCH}
+
+# 可选
+upx -9 "${BASE_NAME}_*"
