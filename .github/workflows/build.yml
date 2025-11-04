@@ -26,7 +26,40 @@ jobs:
           go-version-file: go.mod
           check-latest: true
 
-      - name: 编译程序
+      - name: 编译 linux-amd64
+        env:
+          GOOS: linux
+          GOARCH: amd64
+        run: sh build.sh
+
+      - name: 编译 linux-arm64
+        env:
+          GOOS: linux
+          GOARCH: arm64
+        run: sh build.sh
+
+      - name: 编译 windows-amd64
+        env:
+          GOOS: windows
+          GOARCH: amd64
+        run: sh build.sh
+
+      - name: 编译 windows-arm64
+        env:
+          GOOS: windows
+          GOARCH: arm64
+        run: sh build.sh
+
+      - name: 编译 darwin-amd64
+        env:
+          GOOS: darwin
+          GOARCH: amd64
+        run: sh build.sh
+
+      - name: 编译 darwin-arm64
+        env:
+          GOOS: darwin
+          GOARCH: arm64
         run: sh build.sh
 
       - name: UPX 压缩
