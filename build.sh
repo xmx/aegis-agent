@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eu
 
 BASE_NAME=$(basename $(pwd))
 VERSION=$(TZ=UTC git log -1 --format="%cd" --date=format-local:"v%y.%m.%d-%H%M%S")
