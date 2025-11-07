@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xmx/aegis-common/contract/message"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/system/network"
@@ -39,7 +38,7 @@ func (n *networkCard) Call(ctx context.Context) error {
 	}
 
 	n.last = cards
-	data := &message.Data[[]*network.Card]{Data: cards}
+	data := map[string]any{"data": cards}
 	reqURL := tunutil.AgentToBroker("/api/system/network")
 	strURL := reqURL.String()
 
