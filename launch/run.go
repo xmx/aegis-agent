@@ -9,9 +9,9 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"github.com/xgfone/ship/v5"
-	"github.com/xmx/aegis-agent/applet/crontab"
-	"github.com/xmx/aegis-agent/applet/restapi"
-	"github.com/xmx/aegis-agent/applet/service"
+	"github.com/xmx/aegis-agent/application/crontab"
+	"github.com/xmx/aegis-agent/application/restapi"
+	"github.com/xmx/aegis-agent/application/service"
 	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
 	"github.com/xmx/aegis-common/jsos/jsmod"
