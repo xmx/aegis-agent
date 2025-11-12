@@ -4,10 +4,10 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/xmx/aegis-common/jsos/jsexec"
+	"github.com/xmx/aegis-common/jsos/jstask"
 )
 
-func NewTask(mana jsexec.Manager, log *slog.Logger) *Task {
+func NewTask(mana jstask.Manager, log *slog.Logger) *Task {
 	return &Task{
 		mana: mana,
 		log:  log,
@@ -15,15 +15,15 @@ func NewTask(mana jsexec.Manager, log *slog.Logger) *Task {
 }
 
 type Task struct {
-	mana jsexec.Manager
+	mana jstask.Manager
 	log  *slog.Logger
 }
 
-func (tsk *Task) Tasks() []jsexec.Tasker {
+func (tsk *Task) Tasks() []jstask.Tasker {
 	return tsk.mana.Tasks()
 }
 
-func (tsk *Task) Find(pid uint64) jsexec.Tasker {
+func (tsk *Task) Find(pid uint64) jstask.Tasker {
 	return tsk.mana.Find(pid)
 }
 

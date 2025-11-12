@@ -14,27 +14,34 @@ import (
 	"github.com/xmx/aegis-agent/applet/service"
 	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
-	"github.com/xmx/aegis-common/jsos/jsexec"
 	"github.com/xmx/aegis-common/jsos/jsmod"
+	"github.com/xmx/aegis-common/jsos/jstask"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/library/validation"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/profile"
 	"github.com/xmx/aegis-common/shipx"
+	"github.com/xmx/aegis-common/stegano"
 	"github.com/xmx/aegis-common/tunnel/tundial"
 	"github.com/xmx/aegis-common/tunnel/tunutil"
 )
 
 func Run(ctx context.Context, cfg string) error {
-	cfr := profile.File[config.Config](cfg)
+	var cfr profile.Reader[config.Config]
+	if cfg != "" {
+		cfr = profile.File[config.Config](cfg)
+	} else {
+		exe := os.Args[0]
+		cfr = stegano.File[config.Config](exe)
+	}
 
 	return Exec(ctx, cfr)
 }
 
 func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
-	logHandler := logger.NewHandler(logger.NewTint(os.Stdout, nil))
-	log := slog.New(logHandler)
+	logh := logger.NewHandler(logger.NewTint(os.Stdout, nil))
+	log := slog.New(logh)
 
 	// 即便配置文件加载错误，尽量使用默认值启动。
 	cfg, err := crd.Read()
@@ -77,8 +84,8 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 
 	modules := jsmod.Modules()
 	modules = append(modules, jsmod.NewCrontab(crond))
-	jsmOpt := jsexec.NewOption().Modules(modules)
-	jsManager := jsexec.NewManager(jsmOpt)
+	jstOpt := jstask.Option{Modules: modules}
+	jsManager := jstask.NewManager(jstOpt)
 	taskSvc := service.NewTask(jsManager, log)
 
 	brokerAPIs := []shipx.RouteRegister{
@@ -88,7 +95,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		restapi.NewEcho(),
 		restapi.NewTask(taskSvc),
 	}
-	shipLog := logger.NewShip(logHandler)
+	shipLog := logger.NewShip(logh)
 	brkSH := ship.Default()
 	brkSH.NotFound = shipx.NotFound
 	brkSH.HandleError = shipx.HandleError
