@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/xgfone/ship/v5"
+	"github.com/xmx/aegis-agent/application/errcode"
 	"github.com/xmx/aegis-agent/application/request"
 	"github.com/xmx/aegis-agent/application/response"
 	"github.com/xmx/aegis-agent/application/service"
@@ -64,6 +65,8 @@ func (tsk *Task) kill(c *ship.Context) error {
 	}
 	if task := tsk.svc.Find(req.PID); task != nil {
 		task.Kill("remote killed")
+	} else {
+		return errcode.FmtTaskNotExists.Fmt(req.PID)
 	}
 
 	return nil
