@@ -28,6 +28,13 @@ func (tsk *Task) Find(pid uint64) jstask.Tasker {
 }
 
 func (tsk *Task) Exec(name, code string) {
-	go tsk.mana.Exec(context.Background(), name, code)
-	tsk.log.Info("任务已执行", "name", name)
+	go func() {
+		err := tsk.mana.Exec(context.Background(), name, code)
+		if err != nil {
+			tsk.log.Warn("任务执行出错", "name", name, "error", err)
+		} else {
+			tsk.log.Info("任务执行完毕", "name", name)
+		}
+	}()
+	tsk.log.Info("添加了一个任务", "name", name)
 }

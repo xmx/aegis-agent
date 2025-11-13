@@ -40,6 +40,8 @@ github.com/xmx/aegis-common v0.0.0-20251113013759-e9aefbfac795 h1:I0FhI1G560HagR
 github.com/xmx/aegis-common v0.0.0-20251113013759-e9aefbfac795/go.mod h1:9/LWQBGtUZTQRQUHFoEGOQNPogXq9j8dT6yCxuO7bd0=
 github.com/xmx/aegis-common v0.0.0-20251113072253-3da916513549 h1:Prhm+pVUECk8FScNdhQjIkItacTkK/NlnCUADV2ljlQ=
 github.com/xmx/aegis-common v0.0.0-20251113072253-3da916513549/go.mod h1:9/LWQBGtUZTQRQUHFoEGOQNPogXq9j8dT6yCxuO7bd0=
+github.com/xmx/aegis-common v0.0.0-20251113105218-0fb981edd993 h1:fqAqYvhnNaVZ5t2FZ0eIvlwrpTjo0Yq8Q/CgXAmjw9o=
+github.com/xmx/aegis-common v0.0.0-20251113105218-0fb981edd993/go.mod h1:9/LWQBGtUZTQRQUHFoEGOQNPogXq9j8dT6yCxuO7bd0=
 github.com/xtaci/smux v1.5.35 h1:RosihGJBeaS8gxOZ17HNxbhONwnqQwNwusHx4+SEGhk=
 github.com/xtaci/smux v1.5.35/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=

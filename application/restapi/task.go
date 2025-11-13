@@ -63,11 +63,14 @@ func (tsk *Task) kill(c *ship.Context) error {
 	if err := c.BindQuery(req); err != nil {
 		return err
 	}
-	if task := tsk.svc.Find(req.PID); task != nil {
-		task.Kill("remote killed")
-	} else {
+
+	task := tsk.svc.Find(req.PID)
+	if task == nil {
 		return errcode.FmtTaskNotExists.Fmt(req.PID)
 	}
+
+	c.Warnf("收到结束任务信号", "pid", task.PID, "name", task.Name())
+	task.Kill("remote killed")
 
 	return nil
 }
@@ -76,7 +79,7 @@ func (tsk *Task) attach(c *ship.Context) error {
 	w, r := c.Response(), c.Request()
 	ws, err := tsk.wsu.Upgrade(w, r, nil)
 	if err != nil {
-		c.Errorf("websocket upgrade error", "error", err)
+		c.Warnf("websocket upgrade error", "error", err)
 		return err
 	}
 	defer ws.Close()
@@ -89,18 +92,25 @@ func (tsk *Task) attach(c *ship.Context) error {
 		_ = wserr.writeError(err)
 		return nil
 	}
-	proc := tsk.svc.Find(req.PID)
+
+	pid := req.PID
+	attrs := []any{"pid", pid}
+	proc := tsk.svc.Find(pid)
 	if proc == nil {
-		_ = wserr.writeError(errors.New("process not found"))
+		c.Warnf("任务不存在", attrs...)
+		_ = wserr.writeError(errors.New("进程不存在"))
 		return nil
 	}
 
+	attrs = append(attrs, "name", proc.Name())
+	c.Infof("观测任务输出", attrs...)
 	stdout, stderr := proc.Engineer().Output()
 	stdout.Attach(wsout)
 	stderr.Attach(wserr)
 	defer func() {
 		stdout.Detach(wsout)
 		stderr.Detach(wserr)
+		c.Infof("退出观测", attrs...)
 	}()
 
 	ctx := proc.Engineer().Context()
