@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/xgfone/ship/v5"
@@ -84,8 +85,9 @@ func (tsk *Task) attach(c *ship.Context) error {
 	}
 	defer ws.Close()
 
-	wsout := &playWriter{channel: "stdout", socket: ws}
-	wserr := &playWriter{channel: "stderr", socket: ws}
+	sws := &safeWriter{ws: ws}
+	wsout := &playWriter{channel: "stdout", socket: sws}
+	wserr := &playWriter{channel: "stderr", socket: sws}
 
 	req := new(request.TaskPID)
 	if err = c.BindQuery(req); err != nil {
@@ -138,7 +140,7 @@ func (tsk *Task) attach(c *ship.Context) error {
 
 type playWriter struct {
 	channel string
-	socket  *websocket.Conn
+	socket  *safeWriter
 }
 
 func (pw *playWriter) Write(p []byte) (int, error) {
@@ -159,4 +161,16 @@ func (pw *playWriter) writeError(err error) error {
 type playData struct {
 	Channel string `json:"channel"`
 	Message string `json:"message"`
+}
+
+type safeWriter struct {
+	ws *websocket.Conn
+	mu sync.Mutex
+}
+
+func (s *safeWriter) WriteJSON(v any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.ws.WriteJSON(v)
 }
