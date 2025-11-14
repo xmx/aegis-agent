@@ -102,7 +102,8 @@ func (tsk *Task) attach(c *ship.Context) error {
 		return nil
 	}
 
-	attrs = append(attrs, "name", proc.Name())
+	name := proc.Name()
+	attrs = append(attrs, "name", name)
 	c.Infof("观测任务输出", attrs...)
 	stdout, stderr := proc.Engineer().Output()
 	stdout.Attach(wsout)
@@ -113,8 +114,14 @@ func (tsk *Task) attach(c *ship.Context) error {
 		c.Infof("退出观测", attrs...)
 	}()
 
+	_, _ = stderr.Write([]byte("进入任务：" + name))
 	ctx := proc.Engineer().Context()
 	context.AfterFunc(ctx, func() {
+		msg := name + " 结束了"
+		if te := proc.Error(); te != nil {
+			msg += ": " + te.Error()
+		}
+		_, _ = stderr.Write([]byte(msg))
 		ws.Close()
 	})
 
