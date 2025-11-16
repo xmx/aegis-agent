@@ -70,7 +70,7 @@ func (tsk *Task) kill(c *ship.Context) error {
 		return errcode.FmtTaskNotExists.Fmt(req.PID)
 	}
 
-	c.Warnf("收到结束任务信号", "pid", task.PID, "name", task.Name())
+	c.Warnf("收到结束任务信号", "pid", req.PID, "name", task.Name())
 	task.Kill("remote killed")
 
 	return nil

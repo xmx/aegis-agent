@@ -16,8 +16,8 @@ github.com/go-playground/validator/v10 v10.28.0 h1:Q7ibns33JjyW48gHkuFT91qX48KG0
 github.com/go-playground/validator/v10 v10.28.0/go.mod h1:GoI6I1SjPBh9p7ykNE/yj3fFYbyDOpwMn5KXd+m2hUU=
 github.com/go-sourcemap/sourcemap v2.1.4+incompatible h1:a+iTbH5auLKxaNwQFg0B+TCYl6lbukKPc7b5x0n1s6Q=
 github.com/go-sourcemap/sourcemap v2.1.4+incompatible/go.mod h1:F8jJfvm2KbVjc5NqelyYJmf/v5J0dwNLS2mL4sNA1Jg=
-github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d h1:KJIErDwbSHjnp/SGzE5ed8Aol7JsKiI5X7yWKAtzhM0=
-github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d/go.mod h1:I6V7YzU0XDpsHqbsyrghnFZLO1gwK6NPTNvmetQIk9U=
+github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8 h1:3DsUAV+VNEQa2CUVLxCY3f87278uWfIDhJnbdvDjvmE=
+github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8/go.mod h1:I6V7YzU0XDpsHqbsyrghnFZLO1gwK6NPTNvmetQIk9U=
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09 h1:7hKNwELLbDrtpAggI21fqlVnbXS98zJ0pJIEs2t61wM=
@@ -36,8 +36,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/xgfone/ship/v5 v5.3.2 h1:PFFNyCTT8psAfeizDexFX33SgFJpVikPuSMcjYxqGJA=
 github.com/xgfone/ship/v5 v5.3.2/go.mod h1:mGI+65lLL3kaOseMkWUYgy+OFl27WV2LY1NSsecu/9g=
-github.com/xmx/aegis-common v0.0.0-20251114032316-a75287af0d97 h1:ccpxM+eMMfZYNUtsY5yj/hQeHvhxHbHvTGuEmOWi450=
-github.com/xmx/aegis-common v0.0.0-20251114032316-a75287af0d97/go.mod h1:FraHYQHsBakcVcXcUy7hCRLA4u6+2+TE67FSL67J55Y=
+github.com/xmx/aegis-common v0.0.0-20251116022012-bea938739ea3 h1:deSLZ/dX6jjoeNSGuICGl4lxsHsZZwH2qmTTM1ABmBw=
+github.com/xmx/aegis-common v0.0.0-20251116022012-bea938739ea3/go.mod h1:5JCRRFjrmTywy8yFXzHl1KfOnrWh5EROoeA23/u4jag=
 github.com/xtaci/smux v1.5.35 h1:RosihGJBeaS8gxOZ17HNxbhONwnqQwNwusHx4+SEGhk=
 github.com/xtaci/smux v1.5.35/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=

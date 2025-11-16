@@ -69,13 +69,17 @@ func (m *machineIdent) generate() string {
 	return hex.EncodeToString(sum[:])
 }
 
-func (*machineIdent) networks() string {
+func (m *machineIdent) networks() string {
 	faces, _ := net.Interfaces()
 	cards := make(nics, 0, len(faces))
 	for _, face := range faces {
 		// 跳过换回网卡和未启用的网卡
 		if face.Flags&net.FlagUp == 0 ||
-			face.Flags&net.FlagLoopback != 0 {
+			face.Flags&net.FlagLoopback != 0 ||
+			face.Flags&net.FlagPointToPoint != 0 {
+			continue
+		}
+		if m.isIgnore(face.Name) {
 			continue
 		}
 
@@ -120,6 +124,23 @@ func (*machineIdent) networks() string {
 	cards.sort()
 
 	return cards.join()
+}
+
+func (*machineIdent) isIgnore(name string) bool {
+	name = strings.ToLower(name)
+	for _, prefix := range []string{
+		"vmware", "vmnet", "vnic", // VMware
+		"virtualbox", "vbox", // VirtualBox
+		"vethernet", "hyper-v", // Hyper-V
+		"docker", "wsl", "tun", "tap", "bridge",
+		"wg", "zt", "tailscale",
+	} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+
+	return false
 }
 
 type nic struct {
