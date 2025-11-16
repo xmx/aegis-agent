@@ -113,12 +113,12 @@ func (m *machineIdent) networks() string {
 				}
 				ips = append(ips, ip.String())
 			}*/
-			if len(ips) != 0 {
-				cards = append(cards, &nic{
-					MAC:   face.HardwareAddr.String(),
-					Inets: ips,
-				})
-			}
+		}
+		if len(ips) != 0 {
+			cards = append(cards, &nic{
+				MAC:   face.HardwareAddr.String(),
+				Inets: ips,
+			})
 		}
 	}
 	cards.sort()
@@ -132,6 +132,7 @@ func (*machineIdent) isIgnore(name string) bool {
 		"vmware", "vmnet", "vnic", // VMware
 		"virtualbox", "vbox", // VirtualBox
 		"vethernet", "hyper-v", // Hyper-V
+		"vmenet",
 		"docker", "wsl", "tun", "tap", "bridge",
 		"wg", "zt", "tailscale",
 	} {
