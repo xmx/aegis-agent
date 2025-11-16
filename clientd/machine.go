@@ -106,13 +106,13 @@ func (m *machineIdent) networks() string {
 
 			if ip4 := ip.To4(); ip4 != nil {
 				ips = append(ips, ip.String())
-			} else if ip.To16() != nil {
+			} /* else if ip.To16() != nil {
 				// 排除 IPv6 链路本地地址（fe80::/10），如不需要可移除此条件
 				if ip.IsLinkLocalUnicast() {
 					continue
 				}
 				ips = append(ips, ip.String())
-			}
+			}*/
 			if len(ips) != 0 {
 				cards = append(cards, &nic{
 					MAC:   face.HardwareAddr.String(),
