@@ -84,7 +84,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 
 	modules := jsmod.All()
 	modules = append(modules, jsmod.NewCrontab(crond))
-	jstOpt := jstask.Option{Modules: modules}
+	jstOpt := jstask.Option{Modules: modules, Stdout: os.Stdout, Stderr: os.Stdout}
 	jsManager := jstask.NewManager(jstOpt)
 	taskSvc := service.NewTask(jsManager, log)
 
