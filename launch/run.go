@@ -82,7 +82,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		_, _ = crond.AddTask(task)
 	}
 
-	modules := jsmod.Modules()
+	modules := jsmod.All()
 	modules = append(modules, jsmod.NewCrontab(crond))
 	jstOpt := jstask.Option{Modules: modules}
 	jsManager := jstask.NewManager(jstOpt)
