@@ -79,7 +79,15 @@ func (m *machineIdent) networks() string {
 			face.Flags&net.FlagPointToPoint != 0 {
 			continue
 		}
-		if m.isIgnore(face.Name) {
+
+		emptyMAC := true
+		for _, b := range face.HardwareAddr {
+			if b != 0 {
+				emptyMAC = false
+				break
+			}
+		}
+		if emptyMAC { // MAC 地址为空，一般都是虚拟网卡。
 			continue
 		}
 
@@ -124,24 +132,6 @@ func (m *machineIdent) networks() string {
 	cards.sort()
 
 	return cards.join()
-}
-
-func (*machineIdent) isIgnore(name string) bool {
-	name = strings.ToLower(name)
-	for _, prefix := range []string{
-		"vmware", "vmnet", "vnic", // VMware
-		"virtualbox", "vbox", // VirtualBox
-		"vethernet", "hyper-v", // Hyper-V
-		"vmenet",
-		"docker", "wsl", "tun", "tap", "bridge",
-		"wg", "zt", "tailscale",
-	} {
-		if strings.HasPrefix(name, prefix) {
-			return true
-		}
-	}
-
-	return false
 }
 
 type nic struct {

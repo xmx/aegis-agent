@@ -8,7 +8,7 @@ import (
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/system/network"
-	"github.com/xmx/aegis-common/tunnel/tunutil"
+	"github.com/xmx/aegis-common/tunnel/tunconst"
 )
 
 func NewNetwork(cli httpkit.Client) cronv3.Tasker {
@@ -39,7 +39,7 @@ func (n *networkCard) Call(ctx context.Context) error {
 
 	n.last = cards
 	data := map[string]any{"data": cards}
-	reqURL := tunutil.AgentToBroker("/api/system/network")
+	reqURL := tunconst.AgentToBroker("/api/system/network")
 	strURL := reqURL.String()
 
 	err := n.cli.SendJSON(ctx, http.MethodPost, strURL, nil, data, nil)

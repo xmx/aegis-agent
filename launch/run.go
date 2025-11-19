@@ -27,7 +27,8 @@ import (
 	"github.com/xmx/aegis-common/profile"
 	"github.com/xmx/aegis-common/shipx"
 	"github.com/xmx/aegis-common/stegano"
-	"github.com/xmx/aegis-common/tunnel/tundial"
+	"github.com/xmx/aegis-common/tunnel/tunconst"
+	"github.com/xmx/aegis-common/tunnel/tunopen"
 	"github.com/xmx/aegis-common/tunnel/tunutil"
 )
 
@@ -82,7 +83,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 
 	valid := validation.New()
 	brkHandler := httpkit.NewHandler()
-	tunCfg := tundial.Config{
+	tunCfg := tunopen.Config{
 		Protocols:  cfg.Protocols,
 		Addresses:  cfg.Addresses,
 		PerTimeout: 10 * time.Second,
@@ -95,7 +96,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 	defaultDialer := tunutil.DefaultDialer() // 系统默认 dialer
 	muxDialer := tunutil.NewMuxDialer(mux)   // 将 tunnel 改造成 dialer
-	brokerDialer := tunutil.NewHostMatchDialer(tunutil.BrokerHost, muxDialer)
+	brokerDialer := tunutil.NewHostMatchDialer(tunconst.BrokerHost, muxDialer)
 	dialer := tunutil.NewMatchDialer(defaultDialer, brokerDialer)
 	httpTransport := &http.Transport{DialContext: dialer.DialContext}
 	httpCli := httpkit.NewClient(&http.Client{Transport: httpTransport})

@@ -11,11 +11,10 @@ import (
 
 	"github.com/xmx/aegis-common/library/timex"
 	"github.com/xmx/aegis-common/options"
-	"github.com/xmx/aegis-common/tunnel/tundial"
-	"github.com/xmx/aegis-common/tunnel/tunutil"
+	"github.com/xmx/aegis-common/tunnel/tunopen"
 )
 
-func Open(cfg tundial.Config, opts ...options.Lister[option]) (tundial.Muxer, error) {
+func Open(cfg tunopen.Config, opts ...options.Lister[option]) (tunopen.Muxer, error) {
 	if cfg.Parent == nil {
 		cfg.Parent = context.Background()
 	}
@@ -34,13 +33,13 @@ func Open(cfg tundial.Config, opts ...options.Lister[option]) (tundial.Muxer, er
 }
 
 type agentClient struct {
-	cfg     tundial.Config
+	cfg     tunopen.Config
 	opt     option
 	mux     *safeMuxer
 	rebuild bool
 }
 
-func (ac *agentClient) Muxer() tundial.Muxer {
+func (ac *agentClient) Muxer() tunopen.Muxer {
 	return ac.mux
 }
 
@@ -100,9 +99,9 @@ func (ac *agentClient) opens() error {
 	}
 }
 
-func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tundial.Muxer, *authResponse, error) {
+func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Muxer, *authResponse, error) {
 	attrs := []any{slog.Any("addresses", ac.cfg.Addresses)}
-	mux, err := tundial.Open(ac.cfg)
+	mux, err := tunopen.Open(ac.cfg)
 	if err != nil {
 		attrs = append(attrs, slog.Any("error", err))
 		ac.log().Warn("基础网络连接失败", attrs...)
@@ -140,7 +139,7 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tundial.Mu
 	return mux, res, nil
 }
 
-func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
+func (ac *agentClient) authentication(mux tunopen.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
 	ctx, cancel := context.WithTimeout(ac.cfg.Parent, timeout)
 	defer cancel()
 
@@ -153,18 +152,18 @@ func (ac *agentClient) authentication(mux tundial.Muxer, req *authRequest, timeo
 
 	now := time.Now()
 	_ = conn.SetDeadline(now.Add(timeout))
-	if err = tunutil.WriteAuth(conn, req); err != nil {
+	if err = tunopen.WriteAuth(conn, req); err != nil {
 		return nil, err
 	}
 	resp := new(authResponse)
-	if err = tunutil.ReadAuth(conn, resp); err != nil {
+	if err = tunopen.ReadAuth(conn, resp); err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
 
-func (ac *agentClient) serve(mux tundial.Muxer) {
+func (ac *agentClient) serve(mux tunopen.Muxer) {
 	for {
 		srv := ac.opt.server
 		err := srv.Serve(mux)
