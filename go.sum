@@ -40,8 +40,14 @@ github.com/xmx/aegis-common v0.0.0-20251117110721-f489da319a3a h1:DTHwLDijmk69by
 github.com/xmx/aegis-common v0.0.0-20251117110721-f489da319a3a/go.mod h1:Cq1DR9HpIqhSbUxSUxZHeIqrEXgE0VfDVTjyel38Ujw=
 github.com/xmx/aegis-common v0.0.0-20251118021148-448833528903 h1:8HyUDSzGYeJ4k4a33ZgnHD1gQ5n3T7/ZDe6tJXgy4hA=
 github.com/xmx/aegis-common v0.0.0-20251118021148-448833528903/go.mod h1:kHyAFYMci3l9BA9/XiR+WQNWjwLYl9v1T66KHr8lNYo=
+github.com/xmx/aegis-common v0.0.0-20251118093416-ff5819708f91 h1:a28zOa6PB8zk3s1t+xRZ3+zK+0i6dcNczF3yzTODaq8=
+github.com/xmx/aegis-common v0.0.0-20251118093416-ff5819708f91/go.mod h1:md/gfnuPuRn75M7s1T35Ivsx2l0ylkLvOnkvZA7iVV4=
+github.com/xmx/aegis-common v0.0.0-20251118115449-cbdc580bc6de h1:4Y8cG32kqMkL7Vu2ebc+c5Ls5zEtfYdozqX40H291l8=
+github.com/xmx/aegis-common v0.0.0-20251118115449-cbdc580bc6de/go.mod h1:2clwVSLv9y0Vvs19+JrNrVMYckZtWBfGRO7RdmIS/b8=
 github.com/xtaci/smux v1.5.37 h1:kJxOw1Uq/fF3fb6K0bAgxUwfdsyCypWRuH5l9v8icDI=
 github.com/xtaci/smux v1.5.37/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
+github.com/xtaci/smux v1.5.39 h1:cXfF+86x9HA9p7pCccAnemqmFwy/Y/jjZY10P6RYQB4=
+github.com/xtaci/smux v1.5.39/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
 go.uber.org/mock v0.6.0/go.mod h1:KiVJ4BqZJaMj4svdfmHM0AUx4NJYO8ZNpPnZn1Z+BBU=
 golang.org/x/crypto v0.44.0 h1:A97SsFvM3AIwEEmTBiaxPPTYpDC47w720rdiiUvgoAU=
