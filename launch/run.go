@@ -2,14 +2,12 @@ package launch
 
 import (
 	"context"
-	"crypto/tls"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/robfig/cron/v3"
 	"github.com/xgfone/ship/v5"
 	"github.com/xmx/aegis-agent/application/crontab"
@@ -55,17 +53,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		cfg = new(config.Config)
 	}
 
-	resolver := &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			var d net.Dialer
-			return d.DialContext(ctx, network, "223.5.5.5:53")
-		},
-	}
-	netDialer := &net.Dialer{
-		Resolver: resolver,
-	}
-
+	net.DefaultResolver.PreferGo = true
 	valid := validation.New()
 	brkHandler := httpkit.NewHandler()
 	tunCfg := tundial.Config{
@@ -73,10 +61,6 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		Addresses:  cfg.Addresses,
 		PerTimeout: 10 * time.Second,
 		Parent:     ctx,
-		WebSocketDialer: &websocket.Dialer{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			NetDialContext:  netDialer.DialContext,
-		},
 	}
 	cliOpt := clientd.NewOption().Handler(brkHandler).Logger(log)
 	mux, err := clientd.Open(tunCfg, cliOpt)
