@@ -3,9 +3,12 @@ package launch
 import (
 	"context"
 	"log/slog"
+	"math/rand/v2"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -53,7 +56,29 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		cfg = new(config.Config)
 	}
 
-	net.DefaultResolver.PreferGo = true
+	// FIXME 临时性补丁
+	if runtime.GOOS == "android" {
+		net.DefaultResolver.PreferGo = true
+		net.DefaultResolver.Dial = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			host, _, exx := net.SplitHostPort(addr)
+			if exx != nil {
+				return nil, exx
+			}
+
+			var d net.Dialer
+			if ip, _ := netip.ParseAddr(host); ip.IsLoopback() {
+				servers := []string{
+					"233.5.5.5:53", "114.114.114.114:53", "180.76.76.76:53",
+					"1.2.4.8:53", "8.8.8.8:53", "119.29.29.29:53",
+				}
+				idx := rand.IntN(len(servers))
+				host = servers[idx]
+			}
+
+			return d.DialContext(ctx, network, addr)
+		}
+	}
+
 	valid := validation.New()
 	brkHandler := httpkit.NewHandler()
 	tunCfg := tundial.Config{
