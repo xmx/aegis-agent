@@ -3,6 +3,8 @@ package clientd
 import (
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 // Identifier agent 身份唯一标识。
@@ -85,7 +87,9 @@ func fallbackOptions() OptionBuilder {
 		opts: []func(option) option{
 			func(o option) option {
 				if o.ident == nil {
-					o.ident = NewIdent("")
+					dir, _ := os.UserConfigDir()
+					f := filepath.Join(dir, ".aegis-machine-id")
+					o.ident = NewIdent(f)
 				}
 				if o.server == nil {
 					o.server = &http.Server{

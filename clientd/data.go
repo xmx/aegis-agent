@@ -2,6 +2,7 @@ package clientd
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -21,6 +22,14 @@ type authRequest struct {
 type authResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message,omitzero"`
+}
+
+func (ar authResponse) LogValue() slog.Value {
+	if err := ar.checkError(); err != nil {
+		return slog.StringValue(err.Error())
+	}
+
+	return slog.StringValue("认证接入成功")
 }
 
 func (ar authResponse) checkError() error {
