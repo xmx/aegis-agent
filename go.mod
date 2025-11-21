@@ -6,7 +6,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20251119105017-e0fe79d57f46
+	github.com/xmx/aegis-common v0.0.0-20251120054206-e90bbac3dfb6
 	golang.org/x/sys v0.38.0
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/quic-go/quic-go v0.56.0 // indirect
 	github.com/xtaci/smux v1.5.39 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 )
