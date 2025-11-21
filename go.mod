@@ -19,11 +19,11 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8 // indirect
-	github.com/grafana/sobek v0.0.0-20251113105955-976a34df9c09 // indirect
+	github.com/grafana/sobek v0.0.0-20251121113721-034a476a430c // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lmittmann/tint v1.1.2 // indirect
-	github.com/quic-go/quic-go v0.56.0 // indirect
-	github.com/xtaci/smux v1.5.39 // indirect
+	github.com/quic-go/quic-go v0.57.0 // indirect
+	github.com/xtaci/smux v1.5.40 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
