@@ -99,13 +99,15 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	tunDialer := tundial.NewMatchHostDialer(tunconst.BrokerHost, mux)
 	dualDialer := tundial.NewFirstMatchDialer([]tundial.ContextDialer{tunDialer}, netDialer)
 	httpTransport := &http.Transport{DialContext: dualDialer.DialContext}
-	httpCli := httpkit.NewClient(&http.Client{Transport: httpTransport})
+	httpClient := &http.Client{Transport: httpTransport}
+	httpCli := httpkit.NewClient(httpClient)
 
 	crond := cronv3.New(ctx, log, cron.WithSeconds())
 	crond.Start()
 
 	cronTasks := []cronv3.Tasker{
 		crontab.NewNetwork(httpCli),
+		crontab.NewMetrics(httpClient),
 	}
 	for _, task := range cronTasks {
 		_, _ = crond.AddTask(task)

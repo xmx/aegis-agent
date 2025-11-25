@@ -1,0 +1,43 @@
+package crontab
+
+import (
+	"context"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/xmx/aegis-common/library/cronv3"
+	"github.com/xmx/aegis-common/tunnel/tunconst"
+	"github.com/xmx/metrics"
+)
+
+func NewMetrics(cli *http.Client) cronv3.Tasker {
+	return &metricsTask{
+		cli: cli,
+	}
+}
+
+type metricsTask struct {
+	cli *http.Client
+}
+
+func (mt *metricsTask) Info() cronv3.TaskInfo {
+	return cronv3.TaskInfo{
+		Name:      "上报系统指标",
+		Timeout:   5 * time.Second,
+		CronSched: cronv3.NewInterval(5 * time.Second),
+	}
+}
+
+func (mt *metricsTask) Call(ctx context.Context) error {
+	pushURL := tunconst.AgentToBroker("/api/victoria-metrics/write")
+	strURL := pushURL.String()
+	opts := &metrics.PushOptions{Client: mt.cli}
+
+	return metrics.PushMetricsExt(ctx, strURL, mt.defaultWrite, opts)
+}
+
+func (*metricsTask) defaultWrite(w io.Writer) {
+	metrics.WritePrometheus(w, true)
+	metrics.WriteFDMetrics(w)
+}
