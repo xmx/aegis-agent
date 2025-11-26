@@ -82,14 +82,20 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 
 	valid := validation.New()
-	brkHandler := httpkit.NewHandler()
+	shipLog := logger.NewShip(logh)
+	brkSH := ship.Default()
+	brkSH.NotFound = shipx.NotFound
+	brkSH.HandleError = shipx.HandleError
+	brkSH.Validator = valid
+	brkSH.Logger = shipLog
+
 	tunCfg := tunopen.Config{
 		Protocols:  cfg.Protocols,
 		Addresses:  cfg.Addresses,
 		PerTimeout: 10 * time.Second,
 		Parent:     ctx,
 	}
-	cliOpt := clientd.NewOption().Handler(brkHandler).Logger(log)
+	cliOpt := clientd.NewOption().Handler(brkSH).Logger(log)
 	mux, err := clientd.Open(tunCfg, cliOpt)
 	if err != nil {
 		return err
@@ -126,14 +132,6 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		restapi.NewEcho(),
 		restapi.NewTask(taskSvc),
 	}
-	shipLog := logger.NewShip(logh)
-	brkSH := ship.Default()
-	brkSH.NotFound = shipx.NotFound
-	brkSH.HandleError = shipx.HandleError
-	brkSH.Validator = valid
-	brkSH.Logger = shipLog
-	brkHandler.Store(brkSH)
-
 	apiRGB := brkSH.Group("/api")
 	if err = shipx.RegisterRoutes(apiRGB, brokerAPIs); err != nil {
 		return err

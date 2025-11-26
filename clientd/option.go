@@ -68,7 +68,10 @@ func (b OptionBuilder) Server(s *http.Server) OptionBuilder {
 
 func (b OptionBuilder) Handler(h http.Handler) OptionBuilder {
 	b.opts = append(b.opts, func(o option) option {
-		o.server = &http.Server{Handler: h}
+		proto := new(http.Protocols)
+		proto.SetHTTP1(true)
+		proto.SetUnencryptedHTTP2(true)
+		o.server = &http.Server{Handler: h, Protocols: proto}
 		return o
 	})
 	return b
