@@ -109,14 +109,16 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Mu
 	}
 
 	laddr, raddr := mux.Addr(), mux.RemoteAddr()
+	outboundIP := ac.detectOutboundIP(laddr, raddr)
+	req.Inet = outboundIP.String()
 	protocol, subprotocol := mux.Protocol()
 	attrs = append(attrs,
 		slog.Any("protocol", protocol),
 		slog.Any("subprotocol", subprotocol),
 		slog.Any("local_addr", laddr),
 		slog.Any("remote_addr", raddr),
+		slog.Any("outbound_ip", outboundIP),
 	)
-	req.Inet = ac.checkIP(laddr).String()
 
 	ac.log().Info("基础网络连接成功，开始交换认证报文", attrs...)
 	res, err1 := ac.authentication(mux, req, timeout)
@@ -197,12 +199,20 @@ func (ac *agentClient) log() *slog.Logger {
 	return slog.Default()
 }
 
-func (*agentClient) checkIP(a net.Addr) net.IP {
-	switch v := a.(type) {
-	case *net.TCPAddr:
-		return v.IP
-	case *net.UDPAddr:
-		return v.IP
+func (*agentClient) detectOutboundIP(laddr, raddr net.Addr) net.IP {
+	if addr, ok := laddr.(*net.TCPAddr); ok {
+		return addr.IP
+	}
+
+	dest := raddr.String()
+	conn, err := net.DialTimeout("udp", dest, time.Second)
+	if err != nil {
+		return net.IPv4zero
+	}
+	_ = conn.Close()
+	saddr := conn.LocalAddr()
+	if addr, ok := saddr.(*net.UDPAddr); ok {
+		return addr.IP
 	}
 
 	return net.IPv4zero
