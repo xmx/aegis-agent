@@ -45,7 +45,7 @@ func Run(ctx context.Context, cfg string) error {
 }
 
 func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
-	logh := logger.NewHandler(logger.NewTint(os.Stdout, nil))
+	logh := logger.NewMultiHandler(logger.NewTint(os.Stdout, nil))
 	log := slog.New(logh)
 
 	// 即便配置文件加载错误，尽量使用默认值启动。
