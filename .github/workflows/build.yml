@@ -18,13 +18,12 @@ jobs:
       GOEXPERIMENT: jsonv2
     steps:
       - name: 拉取代码
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 安装环境
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          check-latest: true
 
       - name: 编译 linux-amd64
         env:
@@ -74,7 +73,8 @@ jobs:
       #          upx -9 aegis-agent_windows-amd64_*
 
       - name: 上传产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
+          retention-days: 30
           name: aegis-agent
           path: aegis-agent_*
