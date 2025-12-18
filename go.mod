@@ -1,6 +1,6 @@
 module github.com/xmx/aegis-agent
 
-go 1.26
+go 1.26rc1
 
 require (
 	github.com/gorilla/websocket v1.5.3
