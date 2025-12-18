@@ -6,7 +6,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20251217054108-287418496515
+	github.com/xmx/aegis-common v0.0.0-20251218101411-685d214398bf
 	github.com/xmx/metrics v0.0.0-20251124113446-33b980340aea
 	golang.org/x/sys v0.39.0
 )
@@ -26,7 +26,7 @@ require (
 	github.com/quic-go/quic-go v0.57.1 // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
-	github.com/xtaci/smux v1.5.47 // indirect
+	github.com/xtaci/smux v1.5.48 // indirect
 	golang.org/x/crypto v0.46.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
