@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/xmx/aegis-common/jsos/jstask"
@@ -19,22 +18,33 @@ type Task struct {
 	log  *slog.Logger
 }
 
-func (tsk *Task) Tasks() []jstask.Tasker {
-	return tsk.mana.Tasks()
+func (tsk *Task) Tasks() jstask.Tasks {
+	tasks := tsk.mana.Tasks()
+	tasks.Sort()
+	return tasks
 }
 
-func (tsk *Task) Find(pid uint64) jstask.Tasker {
-	return tsk.mana.Find(pid)
+func (tsk *Task) Lookup(name string) *jstask.Task {
+	return tsk.mana.Lookup(name)
 }
 
 func (tsk *Task) Exec(name, code string) {
 	go func() {
-		err := tsk.mana.Exec(context.Background(), name, code)
+		attrs := []any{"name", name}
+		tsk.log.Info("添加了一个任务", attrs...)
+		execed, _, err := tsk.mana.Exec(nil, name, code)
 		if err != nil {
-			tsk.log.Warn("任务执行出错", "name", name, "error", err)
-		} else {
-			tsk.log.Info("任务执行完毕", "name", name)
+			attrs = append(attrs, "error", err)
+			tsk.log.Warn("任务执行出错", attrs...)
+			return
 		}
+		if !execed {
+			tsk.log.Info("任务无需重复运行", attrs...)
+		}
+		tsk.log.Info("任务执行完毕", attrs...)
 	}()
-	tsk.log.Info("添加了一个任务", "name", name)
+}
+
+func (tsk *Task) Kill(name string) error {
+	return tsk.mana.Kill(name, &jstask.TaskError{Name: name, Text: "主动结束任务"})
 }

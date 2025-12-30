@@ -18,7 +18,7 @@ import (
 	"github.com/xmx/aegis-agent/application/service"
 	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
-	"github.com/xmx/aegis-common/jsos/jsmod"
+	"github.com/xmx/aegis-common/jsos/jsstd"
 	"github.com/xmx/aegis-common/jsos/jstask"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/library/httpkit"
@@ -119,8 +119,8 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		_, _ = crond.AddTask(task)
 	}
 
-	modules := jsmod.All()
-	modules = append(modules, jsmod.NewCrontab(crond))
+	modules := jsstd.All()
+	modules = append(modules, jsstd.NewCrontab(crond))
 	jstOpt := jstask.Option{Modules: modules, Stdout: os.Stdout, Stderr: os.Stdout}
 	jsManager := jstask.NewManager(jstOpt)
 	taskSvc := service.NewTask(jsManager, log)

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/xgfone/ship/v5"
-	"github.com/xmx/aegis-agent/application/errcode"
 	"github.com/xmx/aegis-agent/application/request"
 	"github.com/xmx/aegis-agent/application/response"
 	"github.com/xmx/aegis-agent/application/service"
@@ -39,10 +38,16 @@ func (tsk *Task) RegisterRoute(r *ship.RouteGroupBuilder) error {
 
 func (tsk *Task) list(c *ship.Context) error {
 	tasks := tsk.svc.Tasks()
-	ret := make(response.Tasks, 0, len(tasks))
+
+	ret := make([]*response.Task, 0, len(tasks))
 	for _, tk := range tasks {
-		pid, name, status := tk.PID(), tk.Name(), tk.Status()
-		ele := &response.Task{PID: pid, Name: name, Status: status}
+		name, code, sha1sum := tk.Info()
+		ele := &response.Task{
+			Name:    name,
+			Code:    code,
+			SHA1:    sha1sum,
+			StartAt: tk.StartAt(),
+		}
 		ret = append(ret, ele)
 	}
 
@@ -60,20 +65,12 @@ func (tsk *Task) exec(c *ship.Context) error {
 }
 
 func (tsk *Task) kill(c *ship.Context) error {
-	req := new(request.TaskPID)
+	req := new(request.QueryNames)
 	if err := c.BindQuery(req); err != nil {
 		return err
 	}
 
-	task := tsk.svc.Find(req.PID)
-	if task == nil {
-		return errcode.FmtTaskNotExists.Fmt(req.PID)
-	}
-
-	c.Warnf("收到结束任务信号", "pid", req.PID, "name", task.Name())
-	task.Kill("remote killed")
-
-	return nil
+	return tsk.svc.Kill(req.Get())
 }
 
 func (tsk *Task) attach(c *ship.Context) error {
@@ -89,41 +86,39 @@ func (tsk *Task) attach(c *ship.Context) error {
 	wsout := &playWriter{channel: "stdout", socket: sws}
 	wserr := &playWriter{channel: "stderr", socket: sws}
 
-	req := new(request.TaskPID)
+	req := new(request.QueryNames)
 	if err = c.BindQuery(req); err != nil {
 		_ = wserr.writeError(err)
 		return nil
 	}
 
-	pid := req.PID
-	attrs := []any{"pid", pid}
-	proc := tsk.svc.Find(pid)
+	name := req.Get()
+	attrs := []any{"name", name}
+	proc := tsk.svc.Lookup(name)
 	if proc == nil {
 		c.Warnf("任务不存在", attrs...)
 		_ = wserr.writeError(errors.New("进程不存在"))
 		return nil
 	}
 
-	name := proc.Name()
-	attrs = append(attrs, "name", name)
 	c.Infof("观测任务输出", attrs...)
-	stdout, stderr := proc.Engineer().Output()
-	stdout.Attach(wsout)
-	stderr.Attach(wserr)
+	stdout, stderr := proc.Output()
+	stdout.Append(wsout)
+	stderr.Append(wserr)
 	defer func() {
-		stdout.Detach(wsout)
-		stderr.Detach(wserr)
+		stdout.Remove(wsout)
+		stderr.Remove(wserr)
 		c.Infof("退出观测", attrs...)
 	}()
 
 	_, _ = stderr.Write([]byte("进入任务：" + name))
-	ctx := proc.Engineer().Context()
+	ctx := proc.Context()
 	context.AfterFunc(ctx, func() {
-		msg := name + " 结束了"
-		if te := proc.Error(); te != nil {
-			msg += ": " + te.Error()
-		}
-		_, _ = stderr.Write([]byte(msg))
+		//msg := name + " 结束了"
+		//if te := proc.Error(); te != nil {
+		//	msg += ": " + te.Error()
+		//}
+		//_, _ = stderr.Write([]byte(msg))
 		ws.Close()
 	})
 

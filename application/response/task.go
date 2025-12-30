@@ -26,21 +26,8 @@ func (ps Processes) Sort() {
 }
 
 type Task struct {
-	PID    uint64 `json:"pid"`
-	Name   string `json:"name"`
-	Status uint32 `json:"status"`
-}
-
-type Tasks []*Task
-
-func (ts Tasks) Sort() {
-	slices.SortFunc(ts, func(a, b *Task) int {
-		aid, bid := a.PID, b.PID
-		if aid == bid {
-			return 0
-		} else if aid < bid {
-			return -1
-		}
-		return 1
-	})
+	Name    string    `json:"name"`
+	Code    string    `json:"code"`
+	SHA1    string    `json:"sha1"`
+	StartAt time.Time `json:"start_at"`
 }
