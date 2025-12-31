@@ -2,6 +2,7 @@ package launch
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"math/rand/v2"
 	"net"
@@ -18,6 +19,7 @@ import (
 	"github.com/xmx/aegis-agent/application/service"
 	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
+	jscron "github.com/xmx/aegis-common/jsos/jslib/cron"
 	"github.com/xmx/aegis-common/jsos/jsstd"
 	"github.com/xmx/aegis-common/jsos/jstask"
 	"github.com/xmx/aegis-common/library/cronv3"
@@ -119,10 +121,16 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		_, _ = crond.AddTask(task)
 	}
 
-	modules := jsstd.All()
-	modules = append(modules, jsstd.NewCrontab(crond))
-	jstOpt := jstask.Option{Modules: modules, Stdout: os.Stdout, Stderr: os.Stdout}
-	jsManager := jstask.NewManager(jstOpt)
+	taskOpt := jstask.Options{
+		Logger:  log,
+		Stdout:  []io.Writer{os.Stdout},
+		Stderr:  []io.Writer{os.Stderr},
+		Module:  jsstd.All(),
+		Context: ctx,
+	}
+	taskOpt.Module = append(taskOpt.Module, jscron.New())
+
+	jsManager := jstask.New(taskOpt)
 	taskSvc := service.NewTask(jsManager, log)
 
 	brokerAPIs := []shipx.RouteRegister{
@@ -140,7 +148,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	<-ctx.Done()
 	crond.Stop()
 	_ = mux.Close()
-	rx, tx := mux.Transferred()
+	rx, tx := mux.Traffic()
 	log.Info("流量统计", "receive_bytes", rx, "transmit_bytes", tx)
 
 	return ctx.Err()
