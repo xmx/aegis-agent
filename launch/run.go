@@ -70,10 +70,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		Logger:     log,
 		Context:    ctx,
 	}
-	tunCliOpts := clientd.Options{
-		Handler: brkSH,
-		Logger:  log,
-	}
+	tunCliOpts := clientd.Options{Semver: "0.0.1-dev", Handler: brkSH}
 
 	mux, err := clientd.Open(tunCfg, tunCliOpts)
 	if err != nil {
