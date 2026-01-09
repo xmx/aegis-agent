@@ -1,5 +1,12 @@
 package launch
 
+import (
+	"context"
+	"math/rand/v2"
+	"net"
+	"net/netip"
+)
+
 // FIXME 临时性补丁，此方式修改了全局的 DNS 逻辑。
 func init() {
 	net.DefaultResolver.PreferGo = true
@@ -17,9 +24,9 @@ func init() {
 			idx := rand.IntN(len(servers))
 			addr = servers[idx]
 		}
-		log.Info("请求 DNS 服务器", "server", addr)
 
 		var d net.Dialer
+
 		return d.DialContext(ctx, network, addr)
 	}
 }
