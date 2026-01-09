@@ -4,12 +4,9 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"math/rand/v2"
 	"net"
 	"net/http"
-	"net/netip"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -26,12 +23,12 @@ import (
 	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/library/validation"
 	"github.com/xmx/aegis-common/logger"
+	"github.com/xmx/aegis-common/muxlink/muxconn"
 	"github.com/xmx/aegis-common/profile"
 	"github.com/xmx/aegis-common/shipx"
 	"github.com/xmx/aegis-common/stegano"
 	"github.com/xmx/aegis-common/tunnel/tunconst"
 	"github.com/xmx/aegis-common/tunnel/tundial"
-	"github.com/xmx/aegis-common/tunnel/tunopen"
 )
 
 func Run(ctx context.Context, cfg string) error {
@@ -59,30 +56,6 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		cfg = new(config.Config)
 	}
 
-	// FIXME 临时性补丁，此方式修改了全局的 DNS 逻辑。
-	if runtime.GOOS == "android" {
-		net.DefaultResolver.PreferGo = true
-		net.DefaultResolver.Dial = func(ctx context.Context, network, addr string) (net.Conn, error) {
-			host, _, exx := net.SplitHostPort(addr)
-			if exx != nil {
-				return nil, exx
-			}
-
-			if ip, _ := netip.ParseAddr(host); ip.IsLoopback() {
-				servers := []string{
-					"233.5.5.5:53", "114.114.114.114:53", "180.76.76.76:53",
-					"1.2.4.8:53", "8.8.8.8:53", "119.29.29.29:53",
-				}
-				idx := rand.IntN(len(servers))
-				addr = servers[idx]
-			}
-			log.Info("请求 DNS 服务器", "server", addr)
-
-			var d net.Dialer
-			return d.DialContext(ctx, network, addr)
-		}
-	}
-
 	valid := validation.New()
 	shipLog := logger.NewShip(logh)
 	brkSH := ship.Default()
@@ -91,14 +64,19 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	brkSH.Validator = valid
 	brkSH.Logger = shipLog
 
-	tunCfg := tunopen.Config{
+	tunCfg := muxconn.DialConfig{
 		Protocols:  cfg.Protocols,
 		Addresses:  cfg.Addresses,
 		PerTimeout: 10 * time.Second,
-		Parent:     ctx,
+		Logger:     log,
+		Context:    ctx,
 	}
-	cliOpt := clientd.NewOption().Handler(brkSH).Logger(log)
-	mux, err := clientd.Open(tunCfg, cliOpt)
+	tunCliOpts := clientd.Options{
+		Handler: brkSH,
+		Logger:  log,
+	}
+
+	mux, err := clientd.Open(tunCfg, tunCliOpts)
 	if err != nil {
 		return err
 	}

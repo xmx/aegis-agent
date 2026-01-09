@@ -32,76 +32,23 @@ type Identifier interface {
 	MachineID(rebuild bool) string
 }
 
-type option struct {
-	ident  Identifier
-	server *http.Server
-	logger *slog.Logger
+type Options struct {
+	Ident   Identifier
+	Handler http.Handler
+	Logger  *slog.Logger
 }
 
-func NewOption() OptionBuilder {
-	return OptionBuilder{}
-}
-
-type OptionBuilder struct {
-	opts []func(option) option
-}
-
-func (b OptionBuilder) List() []func(option) option {
-	return b.opts
-}
-
-func (b OptionBuilder) Logger(l *slog.Logger) OptionBuilder {
-	b.opts = append(b.opts, func(o option) option {
-		o.logger = l
-		return o
-	})
-	return b
-}
-
-func (b OptionBuilder) Server(s *http.Server) OptionBuilder {
-	b.opts = append(b.opts, func(o option) option {
-		o.server = s
-		return o
-	})
-	return b
-}
-
-func (b OptionBuilder) Handler(h http.Handler) OptionBuilder {
-	b.opts = append(b.opts, func(o option) option {
-		proto := new(http.Protocols)
-		proto.SetHTTP1(true)
-		proto.SetUnencryptedHTTP2(true)
-		o.server = &http.Server{Handler: h, Protocols: proto}
-		return o
-	})
-	return b
-}
-
-func (b OptionBuilder) Identifier(d Identifier) OptionBuilder {
-	b.opts = append(b.opts, func(o option) option {
-		o.ident = d
-		return o
-	})
-	return b
-}
-
-func fallbackOptions() OptionBuilder {
-	return OptionBuilder{
-		opts: []func(option) option{
-			func(o option) option {
-				if o.ident == nil {
-					dir, _ := os.UserConfigDir()
-					f := filepath.Join(dir, ".aegis-machine-id")
-					o.ident = NewIdent(f)
-				}
-				if o.server == nil {
-					o.server = &http.Server{
-						Handler: http.NotFoundHandler(),
-					}
-				}
-
-				return o
-			},
-		},
+func (o Options) format() Options {
+	ret := Options{
+		Ident:   o.Ident,
+		Handler: o.Handler,
+		Logger:  o.Logger,
 	}
+	if ret.Ident == nil {
+		dir, _ := os.UserConfigDir()
+		f := filepath.Join(dir, ".aegis-machine-id")
+		ret.Ident = NewIdent(f)
+	}
+
+	return ret
 }

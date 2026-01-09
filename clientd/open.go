@@ -3,23 +3,23 @@ package clientd
 import (
 	"context"
 	"log/slog"
-	"net"
+	"net/http"
 	"os"
 	"os/user"
 	"runtime"
 	"time"
 
 	"github.com/xmx/aegis-common/library/timex"
-	"github.com/xmx/aegis-common/options"
+	"github.com/xmx/aegis-common/muxlink/muxconn"
+	"github.com/xmx/aegis-common/muxlink/muxproto"
 	"github.com/xmx/aegis-common/tunnel/tunopen"
 )
 
-func Open(cfg tunopen.Config, opts ...options.Lister[option]) (tunopen.Muxer, error) {
-	if cfg.Parent == nil {
-		cfg.Parent = context.Background()
+func Open(cfg muxconn.DialConfig, opt Options) (muxconn.Muxer, error) {
+	opt = opt.format()
+	if cfg.Context == nil {
+		cfg.Context = context.Background()
 	}
-	opts = append(opts, fallbackOptions())
-	opt := options.Eval(opts...)
 
 	mux := new(safeMuxer)
 	ac := &agentClient{cfg: cfg, opt: opt, mux: mux}
@@ -33,19 +33,19 @@ func Open(cfg tunopen.Config, opts ...options.Lister[option]) (tunopen.Muxer, er
 }
 
 type agentClient struct {
-	cfg     tunopen.Config
-	opt     option
+	cfg     muxconn.DialConfig
+	opt     Options
 	mux     *safeMuxer
 	rebuild bool
 }
 
-func (ac *agentClient) Muxer() tunopen.Muxer {
+func (ac *agentClient) Muxer() muxconn.Muxer {
 	return ac.mux
 }
 
 func (ac *agentClient) opens() error {
 	ac.log().Info("准备连接 broker 服务", "addresses", ac.cfg.Addresses)
-	machineID := ac.opt.ident.MachineID(false)
+	machineID := ac.machineID(false)
 	req := &authRequest{
 		MachineID: machineID,
 		Goos:      runtime.GOOS,
@@ -76,7 +76,7 @@ func (ac *agentClient) opens() error {
 		fails++
 		wait := ac.waitTime(fails)
 		ac.log().Warn("等待重连", "fails", fails, "sleep", wait, "error", err)
-		if err = timex.Sleep(ac.cfg.Parent, wait); err != nil {
+		if err = timex.Sleep(ac.cfg.Context, wait); err != nil {
 			ac.log().Error("不满足继续重试连接的条件", "error", err)
 			return err
 		}
@@ -88,7 +88,7 @@ func (ac *agentClient) opens() error {
 		// 检测到该机器码已经是在线状态，尝试重新生产机器码。
 		ac.rebuild = true
 		beforeID := req.MachineID
-		afterID := ac.opt.ident.MachineID(true)
+		afterID := ac.machineID(true)
 		if beforeID == afterID {
 			ac.log().Info("生成的机器码前后一致", "machine_id", beforeID)
 			continue
@@ -101,7 +101,7 @@ func (ac *agentClient) opens() error {
 
 func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Muxer, *authResponse, error) {
 	attrs := []any{slog.Any("addresses", ac.cfg.Addresses)}
-	mux, err := tunopen.Open(ac.cfg)
+	mux, err := muxconn.Open(ac.cfg)
 	if err != nil {
 		attrs = append(attrs, slog.Any("error", err))
 		ac.log().Warn("基础网络连接失败", attrs...)
@@ -109,7 +109,7 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Mu
 	}
 
 	laddr, raddr := mux.Addr(), mux.RemoteAddr()
-	outboundIP := ac.detectOutboundIP(laddr, raddr)
+	outboundIP := muxproto.Outbound(laddr, raddr)
 	req.Inet = outboundIP.String()
 	protocol, subprotocol := mux.Protocol()
 	attrs = append(attrs,
@@ -141,24 +141,25 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Mu
 	return mux, res, nil
 }
 
+//goland:noinspection GoUnhandledErrorResult
 func (ac *agentClient) authentication(mux tunopen.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
-	ctx, cancel := context.WithTimeout(ac.cfg.Parent, timeout)
+	ctx, cancel := context.WithTimeout(ac.cfg.Context, timeout)
 	defer cancel()
 
 	conn, err := mux.Open(ctx)
 	if err != nil {
 		return nil, err
 	}
-	//goland:noinspection GoUnhandledErrorResult
 	defer conn.Close()
 
-	now := time.Now()
-	_ = conn.SetDeadline(now.Add(timeout))
-	if err = tunopen.WriteAuth(conn, req); err != nil {
+	_ = conn.SetWriteDeadline(time.Now().Add(timeout))
+	if err = muxproto.WriteJSON(conn, req); err != nil {
 		return nil, err
 	}
+
 	resp := new(authResponse)
-	if err = tunopen.ReadAuth(conn, resp); err != nil {
+	_ = conn.SetReadDeadline(time.Now().Add(timeout))
+	if err = muxproto.ReadJSON(conn, resp); err != nil {
 		return nil, err
 	}
 
@@ -167,15 +168,28 @@ func (ac *agentClient) authentication(mux tunopen.Muxer, req *authRequest, timeo
 
 func (ac *agentClient) serve(mux tunopen.Muxer) {
 	for {
-		srv := ac.opt.server
+		srv := ac.server()
 		err := srv.Serve(mux)
 		_ = mux.Close()
 
-		ac.log().Warn("agent 通道掉线了", "error", err)
+		ac.log().Warn("通道掉线了", "error", err)
 		if err = ac.opens(); err != nil {
 			break
 		}
 	}
+}
+
+func (ac *agentClient) server() *http.Server {
+	h := ac.opt.Handler
+	if h == nil {
+		h = http.NotFoundHandler()
+	}
+
+	return &http.Server{Handler: h}
+}
+
+func (ac *agentClient) machineID(rebuild bool) string {
+	return ac.opt.Ident.MachineID(rebuild)
 }
 
 // waitTime 通过持续连接耗费的时间和次数，计算出一个合理的重试时间。
@@ -192,28 +206,9 @@ func (ac *agentClient) waitTime(fails int) time.Duration {
 }
 
 func (ac *agentClient) log() *slog.Logger {
-	if l := ac.opt.logger; l != nil {
+	if l := ac.opt.Logger; l != nil {
 		return l
 	}
 
 	return slog.Default()
-}
-
-func (*agentClient) detectOutboundIP(laddr, raddr net.Addr) net.IP {
-	if addr, ok := laddr.(*net.TCPAddr); ok {
-		return addr.IP
-	}
-
-	dest := raddr.String()
-	conn, err := net.DialTimeout("udp", dest, time.Second)
-	if err != nil {
-		return net.IPv4zero
-	}
-	_ = conn.Close()
-	saddr := conn.LocalAddr()
-	if addr, ok := saddr.(*net.UDPAddr); ok {
-		return addr.IP
-	}
-
-	return net.IPv4zero
 }
