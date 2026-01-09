@@ -40,8 +40,8 @@ github.com/valyala/histogram v1.2.0 h1:wyYGAZZt3CpwUiIb9AU/Zbllg1llXyrtApRS815OL
 github.com/valyala/histogram v1.2.0/go.mod h1:Hb4kBwb4UxsaNbbbh+RRz8ZR6pdodR57tzWUS3BUzXY=
 github.com/xgfone/ship/v5 v5.3.2 h1:PFFNyCTT8psAfeizDexFX33SgFJpVikPuSMcjYxqGJA=
 github.com/xgfone/ship/v5 v5.3.2/go.mod h1:mGI+65lLL3kaOseMkWUYgy+OFl27WV2LY1NSsecu/9g=
-github.com/xmx/aegis-common v0.0.0-20260107103218-cb68cb5646c6 h1:ilnB8uXjeqWck1aAsSThh8/0S70UyYt+eUk2WaMb2lw=
-github.com/xmx/aegis-common v0.0.0-20260107103218-cb68cb5646c6/go.mod h1:mFL73xRIFEdAg5JzVyOWnM1Ct5xPIgI8HPV55kbtNoM=
+github.com/xmx/aegis-common v0.0.0-20260109061013-c68858de4bed h1:U1bz+A9szgsm+wPpRpEaJmzo10m3rZ9xYR33eCVOBVw=
+github.com/xmx/aegis-common v0.0.0-20260109061013-c68858de4bed/go.mod h1:mFL73xRIFEdAg5JzVyOWnM1Ct5xPIgI8HPV55kbtNoM=
 github.com/xmx/metrics v0.0.0-20251124113446-33b980340aea h1:99x5b4jI+jRWekdq51qs6XEjCVFwd9A4XL7YSX3+N2Q=
 github.com/xmx/metrics v0.0.0-20251124113446-33b980340aea/go.mod h1:BUJkJMiANnpHamEWID9fXhAOPldu3e1S4R+3t6TUy60=
 github.com/xtaci/smux v1.5.50 h1:y/1DlWQC9bnMeZzsyk4oL2hbLK6uVk4BKTz5BeQqUEA=
@@ -53,8 +53,8 @@ golang.org/x/crypto v0.46.0/go.mod h1:Evb/oLKmMraqjZ2iQTwDwvCtJkczlDuTmdJXoZVzqU
 golang.org/x/net v0.48.0 h1:zyQRTTrjc33Lhh0fBgT/H3oZq9WuvRR5gPC70xpDiQU=
 golang.org/x/net v0.48.0/go.mod h1:+ndRgGjkh8FGtu1w1FGbEC31if4VrNVMuKTgcAAnQRY=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.39.0 h1:CvCKL8MeisomCi6qNZ+wbb0DN9E5AATixKsvNtMoMFk=
-golang.org/x/sys v0.39.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
+golang.org/x/sys v0.40.0 h1:DBZZqJ2Rkml6QMQsZywtnjnnGvHza6BTfYFWY9kjEWQ=
+golang.org/x/sys v0.40.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
 golang.org/x/text v0.32.0 h1:ZD01bjUt1FQ9WJ0ClOL5vxgxOI/sVCNgX1YtKwcY0mU=
 golang.org/x/text v0.32.0/go.mod h1:o/rUWzghvpD5TXrTIBuJU77MTaN0ljMWE47kxGJQ7jY=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=

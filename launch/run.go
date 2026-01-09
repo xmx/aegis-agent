@@ -24,11 +24,10 @@ import (
 	"github.com/xmx/aegis-common/library/validation"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/muxlink/muxconn"
+	"github.com/xmx/aegis-common/muxlink/muxproto"
 	"github.com/xmx/aegis-common/profile"
 	"github.com/xmx/aegis-common/shipx"
 	"github.com/xmx/aegis-common/stegano"
-	"github.com/xmx/aegis-common/tunnel/tunconst"
-	"github.com/xmx/aegis-common/tunnel/tundial"
 )
 
 func Run(ctx context.Context, cfg string) error {
@@ -82,8 +81,8 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 
 	netDialer := &net.Dialer{Timeout: 30 * time.Second}
-	tunDialer := tundial.NewMatchHostDialer(tunconst.BrokerHost, mux)
-	dualDialer := tundial.NewFirstMatchDialer([]tundial.ContextDialer{tunDialer}, netDialer)
+	tunDialer := muxproto.NewMatchHostDialer(muxproto.BrokerHost, mux)
+	dualDialer := muxproto.NewFirstMatchDialer([]muxproto.Dialer{tunDialer}, netDialer)
 	httpTransport := &http.Transport{DialContext: dualDialer.DialContext}
 	httpClient := &http.Client{Transport: httpTransport}
 	httpCli := httpkit.NewClient(httpClient)

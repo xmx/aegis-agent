@@ -8,7 +8,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"github.com/xmx/aegis-common/library/cronv3"
-	"github.com/xmx/aegis-common/tunnel/tunconst"
+	"github.com/xmx/aegis-common/muxlink/muxproto"
 	"github.com/xmx/metrics"
 )
 
@@ -31,7 +31,7 @@ func (mt *metricsTask) Info() cronv3.TaskInfo {
 }
 
 func (mt *metricsTask) Call(ctx context.Context) error {
-	pushURL := tunconst.AgentToBroker("/api/victoria-metrics/write")
+	pushURL := muxproto.AgentToBrokerURL("/api/victoria-metrics/write")
 	strURL := pushURL.String()
 	opts := &metrics.PushOptions{Client: mt.cli}
 

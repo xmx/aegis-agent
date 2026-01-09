@@ -12,7 +12,6 @@ import (
 	"github.com/xmx/aegis-common/library/timex"
 	"github.com/xmx/aegis-common/muxlink/muxconn"
 	"github.com/xmx/aegis-common/muxlink/muxproto"
-	"github.com/xmx/aegis-common/tunnel/tunopen"
 )
 
 func Open(cfg muxconn.DialConfig, opt Options) (muxconn.Muxer, error) {
@@ -21,7 +20,7 @@ func Open(cfg muxconn.DialConfig, opt Options) (muxconn.Muxer, error) {
 		cfg.Context = context.Background()
 	}
 
-	mux := new(safeMuxer)
+	mux := new(muxInstance)
 	ac := &agentClient{cfg: cfg, opt: opt, mux: mux}
 	if err := ac.opens(); err != nil {
 		return nil, err
@@ -35,7 +34,7 @@ func Open(cfg muxconn.DialConfig, opt Options) (muxconn.Muxer, error) {
 type agentClient struct {
 	cfg     muxconn.DialConfig
 	opt     Options
-	mux     *safeMuxer
+	mux     *muxInstance
 	rebuild bool
 }
 
@@ -99,7 +98,7 @@ func (ac *agentClient) opens() error {
 	}
 }
 
-func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Muxer, *authResponse, error) {
+func (ac *agentClient) open(req *authRequest, timeout time.Duration) (muxconn.Muxer, *authResponse, error) {
 	attrs := []any{slog.Any("addresses", ac.cfg.Addresses)}
 	mux, err := muxconn.Open(ac.cfg)
 	if err != nil {
@@ -142,7 +141,7 @@ func (ac *agentClient) open(req *authRequest, timeout time.Duration) (tunopen.Mu
 }
 
 //goland:noinspection GoUnhandledErrorResult
-func (ac *agentClient) authentication(mux tunopen.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
+func (ac *agentClient) authentication(mux muxconn.Muxer, req *authRequest, timeout time.Duration) (*authResponse, error) {
 	ctx, cancel := context.WithTimeout(ac.cfg.Context, timeout)
 	defer cancel()
 
@@ -166,7 +165,7 @@ func (ac *agentClient) authentication(mux tunopen.Muxer, req *authRequest, timeo
 	return resp, nil
 }
 
-func (ac *agentClient) serve(mux tunopen.Muxer) {
+func (ac *agentClient) serve(mux muxconn.Muxer) {
 	for {
 		srv := ac.server()
 		err := srv.Serve(mux)
