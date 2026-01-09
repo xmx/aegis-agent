@@ -16,6 +16,7 @@ import (
 	"github.com/xmx/aegis-agent/application/service"
 	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
+	"github.com/xmx/aegis-common/banner"
 	jscron "github.com/xmx/aegis-common/jsos/jslib/cron"
 	"github.com/xmx/aegis-common/jsos/jsstd"
 	"github.com/xmx/aegis-common/jsos/jstask"
@@ -71,7 +72,8 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		Logger:     log,
 		Context:    ctx,
 	}
-	tunCliOpts := clientd.Options{Semver: "0.0.1-dev", Handler: brkSH}
+	info := banner.SelfInfo()
+	tunCliOpts := clientd.Options{Semver: info.Version, Handler: brkSH}
 
 	mux, err := clientd.Open(tunCfg, tunCliOpts)
 	if err != nil {
