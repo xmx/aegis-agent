@@ -91,6 +91,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	crond.Start()
 
 	cronTasks := []cronv3.Tasker{
+		crontab.NewHealth(httpCli),
 		crontab.NewNetwork(httpCli),
 		crontab.NewMetrics(httpClient),
 	}
