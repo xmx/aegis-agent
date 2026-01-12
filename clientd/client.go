@@ -231,6 +231,7 @@ func (ac *agentClient) serveHTTP() {
 		err := srv.Serve(ac.mux)
 		ac.log().Warn("通道断开连接了", "error", err)
 
+		_ = ac.mux.Close() // 重连前确保关闭上一个连接
 		mc, err1 := ac.openLoop()
 		if err1 != nil {
 			break

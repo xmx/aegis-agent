@@ -28,7 +28,7 @@ type Pseudo struct {
 }
 
 func (psd *Pseudo) RegisterRoute(r *ship.RouteGroupBuilder) error {
-	r.Route("/psedo/tty").GET(psd.tty)
+	r.Route("/pseudo/tty").GET(psd.tty)
 
 	return nil
 }
