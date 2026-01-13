@@ -20,8 +20,8 @@ func (s PseudoSize) Winsize() *pty.Winsize {
 }
 
 func (s PseudoSize) String() string {
-	x := strconv.FormatUint(uint64(s.Row), 10)
-	y := strconv.FormatUint(uint64(s.Col), 10)
+	x := strconv.FormatUint(uint64(s.Col), 10)
+	y := strconv.FormatUint(uint64(s.Row), 10)
 
 	return x + "x" + y
 }
