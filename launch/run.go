@@ -110,14 +110,13 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 
 	jsManager := jstask.New(taskOpt)
 	taskSvc := service.NewTask(jsManager, log)
-	pseudoSvc := service.NewPseudo(log)
+	systemSvc := service.NewSystem(log)
 
 	brokerAPIs := []shipx.RouteRegister{
 		shipx.NewPprof(),
 		shipx.NewHealth(),
-		restapi.NewSystem(),
+		restapi.NewSystem(systemSvc),
 		restapi.NewEcho(),
-		restapi.NewPseudo(pseudoSvc),
 		restapi.NewTask(taskSvc),
 	}
 	apiRGB := brkSH.Group("/api")
