@@ -8,7 +8,7 @@ require (
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20260113005926-66306a7ea638
+	github.com/xmx/aegis-common v0.0.0-20260113114909-6a181fb8bf43
 	github.com/xmx/metrics v0.0.0-20251124113446-33b980340aea
 	golang.org/x/sys v0.40.0
 )
