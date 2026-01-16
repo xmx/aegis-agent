@@ -5,23 +5,23 @@ import (
 	"io"
 	"log/slog"
 	"net"
-	"net/http"
 	"os"
 	"time"
 
+	"github.com/grafana/pyroscope-go"
 	"github.com/robfig/cron/v3"
 	"github.com/xgfone/ship/v5"
 	"github.com/xmx/aegis-agent/application/crontab"
 	"github.com/xmx/aegis-agent/application/restapi"
 	"github.com/xmx/aegis-agent/application/service"
-	"github.com/xmx/aegis-agent/clientd"
 	"github.com/xmx/aegis-agent/config"
+	"github.com/xmx/aegis-agent/muxclient/clientd"
+	"github.com/xmx/aegis-agent/muxclient/rpclient"
 	"github.com/xmx/aegis-common/banner"
 	jscron "github.com/xmx/aegis-common/jsos/jslib/cron"
 	"github.com/xmx/aegis-common/jsos/jsstd"
 	"github.com/xmx/aegis-common/jsos/jstask"
 	"github.com/xmx/aegis-common/library/cronv3"
-	"github.com/xmx/aegis-common/library/httpkit"
 	"github.com/xmx/aegis-common/library/validation"
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/muxlink/muxconn"
@@ -43,6 +43,7 @@ func Run(ctx context.Context, cfg string) error {
 	return Exec(ctx, cfr)
 }
 
+//goland:noinspection GoUnhandledErrorResult
 func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	logOpts := &slog.HandlerOptions{AddSource: true, Level: slog.LevelDebug}
 	logh := logger.NewMultiHandler(logger.NewTint(os.Stdout, logOpts))
@@ -72,8 +73,8 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		Logger:     log,
 		Context:    ctx,
 	}
-	info := banner.SelfInfo()
-	tunCliOpts := clientd.Options{Semver: info.Version, Handler: brkSH}
+	buildInfo := banner.SelfInfo()
+	tunCliOpts := clientd.Options{Semver: buildInfo.Semver, Handler: brkSH}
 
 	mux, err := clientd.Open(tunCfg, tunCliOpts)
 	if err != nil {
@@ -83,17 +84,39 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	netDialer := &net.Dialer{Timeout: 30 * time.Second}
 	tunDialer := muxproto.NewMatchHostDialer(muxproto.BrokerHost, mux)
 	dualDialer := muxproto.NewFirstMatchDialer([]muxproto.Dialer{tunDialer}, netDialer)
-	httpTransport := &http.Transport{DialContext: dualDialer.DialContext}
-	httpClient := &http.Client{Transport: httpTransport}
-	httpCli := httpkit.NewClient(httpClient)
+	rpcli := rpclient.NewClient(dualDialer, log)
 
-	crond := cronv3.New(ctx, log, cron.WithSeconds())
+	prof, err := pyroscope.Start(pyroscope.Config{
+		ApplicationName: "aegis-agent",
+		ServerAddress:   muxproto.AgentToBrokerURL("/api/pyroscope").String(),
+		HTTPClient:      rpcli,
+		ProfileTypes: []pyroscope.ProfileType{ // 常用 profile 类型（按需开）
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
+	if err != nil {
+		log.Error("pyroscope 启动错误", "error", err)
+	} else {
+		defer prof.Stop()
+	}
+
+	parserOpts := cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor
+	crond := cronv3.New(ctx, log, cron.WithParser(cron.NewParser(parserOpts)))
 	crond.Start()
 
 	cronTasks := []cronv3.Tasker{
-		crontab.NewHealth(httpCli),
-		crontab.NewNetwork(httpCli),
-		crontab.NewMetrics(httpClient),
+		crontab.NewHealth(rpcli),
+		crontab.NewNetwork(rpcli),
+		crontab.NewMetrics(rpcli),
 	}
 	for _, task := range cronTasks {
 		_, _ = crond.AddTask(task)

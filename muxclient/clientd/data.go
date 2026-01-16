@@ -48,6 +48,19 @@ type authRequest struct {
 	Executable string   `json:"executable,omitzero"`
 }
 
+func (a authRequest) Info() *Info {
+	return &Info{
+		Hostname:  a.Hostname,
+		MachineID: a.MachineID,
+		Semver:    a.Semver,
+		Inet:      a.Inet,
+		Goos:      a.Goos,
+		Goarch:    a.Goarch,
+		PID:       a.PID,
+		Args:      a.Args,
+	}
+}
+
 type authResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message,omitzero"`
@@ -74,16 +87,38 @@ func (ar authResponse) conflicted() bool {
 	return ar.Code == http.StatusConflict
 }
 
-type muxInstance struct {
-	ptr atomic.Pointer[muxconn.Muxer]
+type Info struct {
+	Hostname  string   `json:"hostname"`
+	MachineID string   `json:"machine_id"`
+	Semver    string   `json:"semver"`
+	Inet      string   `json:"inet"`
+	Goos      string   `json:"goos"`
+	Goarch    string   `json:"goarch"`
+	PID       int      `json:"pid"`
+	Args      []string `json:"args"`
 }
 
-func (m *muxInstance) Accept() (net.Conn, error)                  { return m.load().Accept() }
-func (m *muxInstance) Close() error                               { return m.load().Close() }
-func (m *muxInstance) Addr() net.Addr                             { return m.load().Addr() }
-func (m *muxInstance) Open(ctx context.Context) (net.Conn, error) { return m.load().Open(ctx) }
-func (m *muxInstance) RemoteAddr() net.Addr                       { return m.load().RemoteAddr() }
-func (m *muxInstance) Protocol() (string, string)                 { return m.load().Protocol() }
-func (m *muxInstance) Traffic() (rx, tx uint64)                   { return m.load().Traffic() }
-func (m *muxInstance) load() muxconn.Muxer                        { return *m.ptr.Load() }
-func (m *muxInstance) store(mux muxconn.Muxer)                    { m.ptr.Store(&mux) }
+type Muxer interface {
+	muxconn.Muxer
+	Info() Info
+}
+
+type muxInstance struct {
+	mux atomic.Pointer[muxconn.Muxer]
+	inf atomic.Pointer[Info]
+}
+
+func (m *muxInstance) Accept() (net.Conn, error)                  { return m.loadMUX().Accept() }
+func (m *muxInstance) Close() error                               { return m.loadMUX().Close() }
+func (m *muxInstance) Addr() net.Addr                             { return m.loadMUX().Addr() }
+func (m *muxInstance) Open(ctx context.Context) (net.Conn, error) { return m.loadMUX().Open(ctx) }
+func (m *muxInstance) RemoteAddr() net.Addr                       { return m.loadMUX().RemoteAddr() }
+func (m *muxInstance) Library() (string, string)                  { return m.loadMUX().Library() }
+func (m *muxInstance) Traffic() (uint64, uint64)                  { return m.loadMUX().Traffic() }
+func (m *muxInstance) Info() Info                                 { return *m.inf.Load() }
+func (m *muxInstance) loadMUX() muxconn.Muxer                     { return *m.mux.Load() }
+
+func (m *muxInstance) store(mux muxconn.Muxer, info *Info) {
+	m.mux.Store(&mux)
+	m.inf.Store(info)
+}

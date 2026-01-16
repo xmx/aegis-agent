@@ -32,7 +32,7 @@ func (o Options) machineID(rebuild bool) string {
 	return ident.MachineID(rebuild)
 }
 
-func Open(cfg muxconn.DialConfig, opt Options) (muxconn.Muxer, error) {
+func Open(cfg muxconn.DialConfig, opt Options) (Muxer, error) {
 	if cfg.Context == nil {
 		cfg.Context = context.Background()
 	}
@@ -57,11 +57,11 @@ func Open(cfg muxconn.DialConfig, opt Options) (muxconn.Muxer, error) {
 		mux: mux,
 		req: req,
 	}
-	mc, err := cli.openLoop()
+	mc, inf, err := cli.openLoop()
 	if err != nil {
 		return nil, err
 	}
-	mux.store(mc)
+	mux.store(mc, inf)
 
 	go cli.serveHTTP()
 
@@ -76,7 +76,7 @@ type agentClient struct {
 	rebuild atomic.Bool
 }
 
-func (ac *agentClient) openLoop() (muxconn.Muxer, error) {
+func (ac *agentClient) openLoop() (muxconn.Muxer, *Info, error) {
 	var tires int
 	for {
 		tires++
@@ -86,7 +86,9 @@ func (ac *agentClient) openLoop() (muxconn.Muxer, error) {
 			attrs = append(attrs, "error", err)
 		} else {
 			ac.log().Info("节点上线成功")
-			return mux, nil
+			inf := ac.req.Info()
+
+			return mux, inf, nil
 		}
 
 		du := ac.retryInterval(tires)
@@ -96,7 +98,7 @@ func (ac *agentClient) openLoop() (muxconn.Muxer, error) {
 		if err := ac.sleep(du); err != nil {
 			attrs = append(attrs, "final_error", err)
 			ac.log().Error("通道连接遇到不可重试的错误", attrs...)
-			return nil, err
+			return nil, nil, err
 		}
 	}
 }
@@ -232,11 +234,11 @@ func (ac *agentClient) serveHTTP() {
 		ac.log().Warn("通道断开连接了", "error", err)
 
 		_ = ac.mux.Close() // 重连前确保关闭上一个连接
-		mc, err1 := ac.openLoop()
+		mc, inf, err1 := ac.openLoop()
 		if err1 != nil {
 			break
 		}
 
-		ac.mux.store(mc)
+		ac.mux.store(mc, inf)
 	}
 }

@@ -2,24 +2,22 @@ package crontab
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"github.com/xmx/aegis-agent/muxclient/rpclient"
 	"github.com/xmx/aegis-common/library/cronv3"
-	"github.com/xmx/aegis-common/library/httpkit"
-	"github.com/xmx/aegis-common/muxlink/muxproto"
 	"github.com/xmx/aegis-common/system/network"
 )
 
-func NewNetwork(cli httpkit.Client) cronv3.Tasker {
+func NewNetwork(cli *rpclient.Client) cronv3.Tasker {
 	return &networkCard{
 		cli: cli,
 	}
 }
 
 type networkCard struct {
-	cli  httpkit.Client
+	cli  *rpclient.Client
 	last network.Cards
 }
 
@@ -38,16 +36,28 @@ func (n *networkCard) Call(ctx context.Context) error {
 		return nil
 	}
 
-	n.last = cards
-	data := map[string]any{"data": cards}
-	reqURL := muxproto.AgentToBrokerURL("/api/system/network")
-	strURL := reqURL.String()
-
-	err := n.cli.SendJSON(ctx, http.MethodPost, strURL, nil, data, nil)
-	if err != nil {
+	data := n.convert(cards)
+	if err := n.cli.PostNetworks(ctx, data); err != nil {
 		return err
 	}
 	n.last = cards
 
 	return nil
+}
+
+func (n *networkCard) convert(cards network.Cards) rpclient.NetworkCards {
+	dats := make(rpclient.NetworkCards, 0, len(cards))
+	for _, c := range cards {
+		dat := &rpclient.NetworkCard{
+			Name:  c.Name,
+			Index: c.Index,
+			MTU:   c.MTU,
+			IPv4:  c.IPv4,
+			IPv6:  c.IPv6,
+			MAC:   c.MAC,
+		}
+		dats = append(dats, dat)
+	}
+
+	return dats
 }

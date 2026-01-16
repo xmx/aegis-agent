@@ -5,11 +5,12 @@ go 1.25.5
 require (
 	github.com/creack/pty v1.1.24
 	github.com/gorilla/websocket v1.5.3
+	github.com/grafana/pyroscope-go v1.2.7
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20260113114909-6a181fb8bf43
-	github.com/xmx/metrics v0.0.0-20251124113446-33b980340aea
+	github.com/xmx/aegis-common v0.0.0-20260116110754-213badd18af9
+	github.com/xmx/metrics v0.0.0-20260116025626-8ee725bd7622
 	golang.org/x/sys v0.40.0
 )
 
@@ -23,9 +24,12 @@ require (
 	github.com/go-playground/validator/v10 v10.30.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
-	github.com/google/pprof v0.0.0-20260111202518-71be6bfdd440 // indirect
+	github.com/google/pprof v0.0.0-20260115054156-294ebfa9ad83 // indirect
+	github.com/grafana/pyroscope-go/godeltaprof v0.1.9 // indirect
 	github.com/grafana/sobek v0.0.0-20251209155516-22d1085c20a8 // indirect
+	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/jezek/xgb v1.2.0 // indirect
+	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e // indirect

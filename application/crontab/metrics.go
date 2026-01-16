@@ -3,23 +3,23 @@ package crontab
 import (
 	"context"
 	"io"
-	"net/http"
 	"time"
 
 	"github.com/robfig/cron/v3"
+	"github.com/xmx/aegis-agent/muxclient/rpclient"
 	"github.com/xmx/aegis-common/library/cronv3"
 	"github.com/xmx/aegis-common/muxlink/muxproto"
 	"github.com/xmx/metrics"
 )
 
-func NewMetrics(cli *http.Client) cronv3.Tasker {
+func NewMetrics(cli *rpclient.Client) cronv3.Tasker {
 	return &metricsTask{
 		cli: cli,
 	}
 }
 
 type metricsTask struct {
-	cli *http.Client
+	cli *rpclient.Client
 }
 
 func (mt *metricsTask) Info() cronv3.TaskInfo {
@@ -33,7 +33,8 @@ func (mt *metricsTask) Info() cronv3.TaskInfo {
 func (mt *metricsTask) Call(ctx context.Context) error {
 	pushURL := muxproto.AgentToBrokerURL("/api/victoria-metrics/write")
 	strURL := pushURL.String()
-	opts := &metrics.PushOptions{Client: mt.cli}
+	cli := mt.cli.HTTPClient()
+	opts := &metrics.PushOptions{Client: cli}
 
 	return metrics.PushMetricsExt(ctx, strURL, mt.defaultWrite, opts)
 }
