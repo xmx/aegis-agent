@@ -83,5 +83,5 @@ func (syst *System) screenshot(c *ship.Context) error {
 }
 
 func (syst *System) download(c *ship.Context) error {
-	return c.Attachment("D:\\Programs\\Hyper-V\\iso\\Win11_25H2_Chinese_Simplified_x64.iso", "")
+	return c.Attachment("/Users/wang/Downloads/30G.bin", "")
 }
