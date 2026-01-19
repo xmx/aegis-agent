@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/xmx/aegis-common/muxlink/muxconn"
+	"golang.org/x/time/rate"
 )
 
 // Identifier agent 身份唯一标识。
@@ -115,6 +116,8 @@ func (m *muxInstance) Open(ctx context.Context) (net.Conn, error) { return m.loa
 func (m *muxInstance) RemoteAddr() net.Addr                       { return m.loadMUX().RemoteAddr() }
 func (m *muxInstance) Library() (string, string)                  { return m.loadMUX().Library() }
 func (m *muxInstance) Traffic() (uint64, uint64)                  { return m.loadMUX().Traffic() }
+func (m *muxInstance) Limit() rate.Limit                          { return m.loadMUX().Limit() }
+func (m *muxInstance) SetLimit(bps rate.Limit)                    { m.loadMUX().SetLimit(bps) }
 func (m *muxInstance) Info() Info                                 { return *m.inf.Load() }
 func (m *muxInstance) loadMUX() muxconn.Muxer                     { return *m.mux.Load() }
 

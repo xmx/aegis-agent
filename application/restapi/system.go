@@ -4,27 +4,32 @@ import (
 	"image/png"
 	"mime"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/xgfone/ship/v5"
 	"github.com/xmx/aegis-agent/application/request"
 	"github.com/xmx/aegis-agent/application/service"
+	"github.com/xmx/aegis-common/muxlink/muxconn"
+	"golang.org/x/time/rate"
 )
 
-func NewSystem(svc *service.System) *System {
+func NewSystem(mux muxconn.Muxer, svc *service.System) *System {
 	wsu := &websocket.Upgrader{
 		HandshakeTimeout: 10 * time.Second,
 		CheckOrigin:      func(r *http.Request) bool { return true },
 	}
 
 	return &System{
+		mux: mux,
 		svc: svc,
 		wsu: wsu,
 	}
 }
 
 type System struct {
+	mux muxconn.Muxer
 	svc *service.System
 	wsu *websocket.Upgrader
 }
@@ -34,6 +39,8 @@ func (syst *System) RegisterRoute(r *ship.RouteGroupBuilder) error {
 	r.Route("/system/tty").GET(syst.tty)
 	r.Route("/system/screenshot").GET(syst.screenshot)
 	r.Route("/system/download").GET(syst.download)
+	r.Route("/system/limit").GET(syst.limit)
+	r.Route("/system/setlimit").GET(syst.setlimit)
 	return nil
 }
 
@@ -83,5 +90,22 @@ func (syst *System) screenshot(c *ship.Context) error {
 }
 
 func (syst *System) download(c *ship.Context) error {
-	return c.Attachment("/Users/wang/Downloads/30G.bin", "")
+	return c.Attachment("D:\\Users\\Administrator\\Downloads\\30g.bin", "")
+}
+
+func (syst *System) setlimit(c *ship.Context) error {
+	str := c.Query("n")
+	num, _ := strconv.ParseInt(str, 10, 64)
+	if num <= 0 {
+		return nil
+	}
+
+	syst.mux.SetLimit(rate.Limit(num * 1024))
+
+	return nil
+}
+
+func (syst *System) limit(c *ship.Context) error {
+	n := syst.mux.Limit()
+	return c.JSON(http.StatusOK, map[string]any{"n": n})
 }

@@ -9,9 +9,10 @@ require (
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20260118023250-53b9b43c7553
+	github.com/xmx/aegis-common v0.0.0-20260119060111-f532dbb5d947
 	github.com/xmx/metrics v0.0.0-20260116025626-8ee725bd7622
 	golang.org/x/sys v0.40.0
+	golang.org/x/time v0.14.0
 )
 
 require (

@@ -138,7 +138,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	brokerAPIs := []shipx.RouteRegister{
 		shipx.NewPprof(),
 		shipx.NewHealth(),
-		restapi.NewSystem(systemSvc),
+		restapi.NewSystem(mux, systemSvc),
 		restapi.NewEcho(),
 		restapi.NewTask(taskSvc),
 	}
