@@ -118,6 +118,7 @@ func (m *muxInstance) Library() (string, string)                  { return m.loa
 func (m *muxInstance) Traffic() (uint64, uint64)                  { return m.loadMUX().Traffic() }
 func (m *muxInstance) Limit() rate.Limit                          { return m.loadMUX().Limit() }
 func (m *muxInstance) SetLimit(bps rate.Limit)                    { m.loadMUX().SetLimit(bps) }
+func (m *muxInstance) NumStreams() (int64, int64)                 { return m.loadMUX().NumStreams() }
 func (m *muxInstance) Info() Info                                 { return *m.inf.Load() }
 func (m *muxInstance) loadMUX() muxconn.Muxer                     { return *m.mux.Load() }
 

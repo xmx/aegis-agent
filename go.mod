@@ -1,6 +1,6 @@
 module github.com/xmx/aegis-agent
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/creack/pty v1.1.24
@@ -9,7 +9,7 @@ require (
 	github.com/kbinani/screenshot v0.0.0-20250624051815-089614a94018
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xgfone/ship/v5 v5.3.2
-	github.com/xmx/aegis-common v0.0.0-20260119060111-f532dbb5d947
+	github.com/xmx/aegis-common v0.0.0-20260120061441-f6264d7b4a21
 	github.com/xmx/metrics v0.0.0-20260116025626-8ee725bd7622
 	golang.org/x/sys v0.40.0
 	golang.org/x/time v0.14.0

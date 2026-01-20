@@ -3,6 +3,7 @@ package rpclient
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/xmx/aegis-common/muxlink/muxproto"
 )
@@ -11,9 +12,10 @@ func newHTTPTransport(d muxproto.Dialer, log *slog.Logger) *httpTransport {
 	return &httpTransport{
 		log: log,
 		tran: &http.Transport{
-			DialContext:     d.DialContext,
-			MaxIdleConns:    10,
-			MaxConnsPerHost: 50,
+			DialContext:           d.DialContext,
+			MaxConnsPerHost:       50,
+			IdleConnTimeout:       3 * time.Minute,
+			ResponseHeaderTimeout: time.Minute,
 		},
 	}
 }

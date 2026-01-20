@@ -41,6 +41,7 @@ func (syst *System) RegisterRoute(r *ship.RouteGroupBuilder) error {
 	r.Route("/system/download").GET(syst.download)
 	r.Route("/system/limit").GET(syst.limit)
 	r.Route("/system/setlimit").GET(syst.setlimit)
+	r.Route("/system/streams").GET(syst.streams)
 	return nil
 }
 
@@ -108,4 +109,9 @@ func (syst *System) setlimit(c *ship.Context) error {
 func (syst *System) limit(c *ship.Context) error {
 	n := syst.mux.Limit()
 	return c.JSON(http.StatusOK, map[string]any{"n": n})
+}
+
+func (syst *System) streams(c *ship.Context) error {
+	a, b := syst.mux.NumStreams()
+	return c.JSON(http.StatusOK, map[string]any{"total": a, "active": b})
 }
