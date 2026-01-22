@@ -10,14 +10,14 @@ import (
 	"github.com/xmx/aegis-common/system/network"
 )
 
-func NewNetwork(cli *rpclient.Client) cronv3.Tasker {
+func NewNetwork(cli rpclient.Client) cronv3.Tasker {
 	return &networkCard{
 		cli: cli,
 	}
 }
 
 type networkCard struct {
-	cli  *rpclient.Client
+	cli  rpclient.Client
 	last network.Cards
 }
 

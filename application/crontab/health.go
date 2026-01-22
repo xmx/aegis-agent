@@ -9,14 +9,14 @@ import (
 	"github.com/xmx/aegis-common/library/cronv3"
 )
 
-func NewHealth(cli *rpclient.Client) cronv3.Tasker {
+func NewHealth(cli rpclient.Client) cronv3.Tasker {
 	return &healthPing{
 		cli: cli,
 	}
 }
 
 type healthPing struct {
-	cli *rpclient.Client
+	cli rpclient.Client
 }
 
 func (hp *healthPing) Info() cronv3.TaskInfo {

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/xmx/aegis-common/muxlink/muxconn"
-	"github.com/xmx/aegis-common/muxlink/muxproto"
+	"github.com/xmx/aegis-common/muxlink/muxtool"
 )
 
 type Options struct {
@@ -111,7 +111,7 @@ func (ac *agentClient) open() (muxconn.Muxer, error) {
 	}
 
 	laddr, raddr := mux.Addr(), mux.RemoteAddr()
-	outboundIP := muxproto.Outbound(laddr, raddr)
+	outboundIP := muxtool.Outbound(laddr, raddr)
 	ac.req.Inet = outboundIP.String()
 
 	ctx, cancel := ac.perContext()
@@ -126,7 +126,7 @@ func (ac *agentClient) open() (muxconn.Muxer, error) {
 
 	timeout := ac.timeout()
 	_ = conn.SetWriteDeadline(time.Now().Add(timeout))
-	if err = muxproto.WriteJSON(conn, ac.req); err != nil {
+	if err = muxtool.WriteAuth(conn, ac.req); err != nil {
 		_ = mux.Close()
 		ac.log().Warn("写入认证消息错误", "error", err)
 		return nil, err
@@ -134,14 +134,13 @@ func (ac *agentClient) open() (muxconn.Muxer, error) {
 
 	resp := new(authResponse)
 	_ = conn.SetReadDeadline(time.Now().Add(timeout))
-	if err = muxproto.ReadJSON(conn, resp); err != nil {
+	if err = muxtool.ReadAuth(conn, resp); err != nil {
 		_ = mux.Close()
 		ac.log().Warn("读取认证响应消息错误", "error", err)
 		return nil, err
 	}
 
-	err = resp.checkError()
-	if err == nil {
+	if err = resp.checkError(); err == nil {
 		return mux, nil
 	}
 
@@ -175,18 +174,11 @@ func (ac *agentClient) timeout() time.Duration {
 	return time.Minute
 }
 
-func (ac *agentClient) parentContext() context.Context {
-	if ctx := ac.cfg.Context; ctx != nil {
-		return ctx
-	}
-
-	return context.Background()
-}
-
 func (ac *agentClient) perContext() (context.Context, context.CancelFunc) {
 	d := ac.timeout()
+	parent := ac.cfg.Context
 
-	return context.WithTimeout(ac.parentContext(), d)
+	return context.WithTimeout(parent, d)
 }
 
 func (ac *agentClient) log() *slog.Logger {
@@ -210,7 +202,7 @@ func (*agentClient) retryInterval(tires int) time.Duration {
 }
 
 func (ac *agentClient) sleep(d time.Duration) error {
-	ctx := ac.parentContext()
+	ctx := ac.cfg.Context
 	timer := time.NewTimer(d)
 	defer timer.Stop()
 

@@ -26,6 +26,7 @@ import (
 	"github.com/xmx/aegis-common/logger"
 	"github.com/xmx/aegis-common/muxlink/muxconn"
 	"github.com/xmx/aegis-common/muxlink/muxproto"
+	"github.com/xmx/aegis-common/muxlink/muxtool"
 	"github.com/xmx/aegis-common/profile"
 	"github.com/xmx/aegis-common/shipx"
 	"github.com/xmx/aegis-common/stegano"
@@ -81,15 +82,16 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		return err
 	}
 
-	netDialer := &net.Dialer{Timeout: 30 * time.Second}
-	tunDialer := muxproto.NewMatchHostDialer(muxproto.BrokerHost, mux)
-	dualDialer := muxproto.NewFirstMatchDialer([]muxproto.Dialer{tunDialer}, netDialer)
-	rpcli := rpclient.NewClient(dualDialer, log)
+	sysdial := &net.Dialer{Timeout: 30 * time.Second}
+	muxopen := muxproto.NewMUXOpener(mux, muxproto.BrokerHost)
+	mixdial := muxproto.NewMixedDialer(muxopen, sysdial)
+	basecli := muxtool.NewClient(mixdial, log)
+	rpcli := rpclient.NewClient(basecli)
 
 	prof, err := pyroscope.Start(pyroscope.Config{
 		ApplicationName: "aegis-agent",
 		ServerAddress:   muxproto.AgentToBrokerURL("/api/pyroscope").String(),
-		HTTPClient:      rpcli,
+		HTTPClient:      basecli.HTTPClient(),
 		ProfileTypes: []pyroscope.ProfileType{ // 常用 profile 类型（按需开）
 			pyroscope.ProfileCPU,
 			pyroscope.ProfileAllocObjects,
