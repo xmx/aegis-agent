@@ -112,7 +112,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 	}
 
 	parserOpts := cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor
-	crond := cronv3.New(ctx, log, cron.WithParser(cron.NewParser(parserOpts)))
+	crond := cronv3.New(log, cron.WithParser(cron.NewParser(parserOpts)))
 	crond.Start()
 
 	cronTasks := []cronv3.Tasker{
@@ -121,7 +121,7 @@ func Exec(ctx context.Context, crd profile.Reader[config.Config]) error {
 		crontab.NewMetrics(rpcli),
 	}
 	for _, task := range cronTasks {
-		_, _ = crond.AddTask(task)
+		_ = crond.AddTask(task)
 	}
 
 	taskOpt := jstask.Options{
